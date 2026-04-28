@@ -26,7 +26,7 @@ export default function TransporterDashboard() {
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/login"); return; }
     if (status === "authenticated" && session.user.role !== "TRANSPORTER") {
-      router.push("/dashboard/client"); return;
+      router.push("/client"); return;
     }
     if (status === "authenticated") {
       fetch("/api/requests")
@@ -47,7 +47,7 @@ export default function TransporterDashboard() {
             <p className="text-gray-500 text-sm mt-1">مرحباً {session?.user?.name}</p>
           </div>
           <Link
-            href="/dashboard/transporter/browse"
+            href="/transporter/browse"
             className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2 transition-colors text-sm"
           >
             <List className="w-4 h-4" />
@@ -84,7 +84,7 @@ export default function TransporterDashboard() {
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-bold text-gray-900">آخر الطلبات المتاحة</h2>
-            <Link href="/dashboard/transporter/browse" className="text-sm text-orange-500 hover:underline">
+            <Link href="/transporter/browse" className="text-sm text-orange-500 hover:underline">
               عرض الكل
             </Link>
           </div>
@@ -107,7 +107,7 @@ export default function TransporterDashboard() {
                       </span>
                     ) : (
                       <Link
-                        href={`/dashboard/transporter/browse`}
+                        href={`/transporter/browse`}
                         className="text-xs bg-orange-500 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-orange-600 transition-colors"
                       >
                         قدّم عرضاً

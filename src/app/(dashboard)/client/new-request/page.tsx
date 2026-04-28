@@ -59,14 +59,14 @@ export default function NewRequestPage() {
     setLoading(false);
 
     if (!res.ok) { setError(data.error || "حدث خطأ"); return; }
-    router.push("/dashboard/client/requests");
+    router.push("/client/requests");
   }
 
   return (
     <DashboardLayout>
       <div className="max-w-2xl">
         <div className="flex items-center gap-3 mb-8">
-          <Link href="/dashboard/client" className="text-gray-400 hover:text-gray-600">
+          <Link href="/client" className="text-gray-400 hover:text-gray-600">
             <ArrowRight className="w-5 h-5" />
           </Link>
           <div>

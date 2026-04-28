@@ -10,8 +10,8 @@ export default function DashboardRedirect() {
   useEffect(() => {
     if (status === "loading") return;
     if (!session) { router.push("/login"); return; }
-    if (session.user.role === "CLIENT") router.push("/dashboard/client");
-    else router.push("/dashboard/transporter");
+    if (session.user.role === "CLIENT") router.push("/client");
+    else router.push("/transporter");
   }, [session, status, router]);
 
   return (

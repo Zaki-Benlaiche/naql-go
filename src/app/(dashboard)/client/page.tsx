@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { PlusCircle, Package, Clock, CheckCircle, Truck } from "lucide-react";
+import { PlusCircle, Package, CheckCircle, Truck } from "lucide-react";
 
 type Request = {
   id: string;
@@ -43,7 +43,7 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/login"); return; }
     if (status === "authenticated" && session.user.role !== "CLIENT") {
-      router.push("/dashboard/transporter"); return;
+      router.push("/transporter"); return;
     }
     if (status === "authenticated") {
       fetch("/api/requests")
@@ -65,7 +65,7 @@ export default function ClientDashboard() {
             <p className="text-gray-500 text-sm mt-1">مرحباً {session?.user?.name}</p>
           </div>
           <Link
-            href="/dashboard/client/new-request"
+            href="/client/new-request"
             className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2 transition-colors text-sm"
           >
             <PlusCircle className="w-4 h-4" />
@@ -84,7 +84,7 @@ export default function ClientDashboard() {
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-bold text-gray-900">آخر الطلبات</h2>
-            <Link href="/dashboard/client/requests" className="text-sm text-orange-500 hover:underline">
+            <Link href="/client/requests" className="text-sm text-orange-500 hover:underline">
               عرض الكل
             </Link>
           </div>
@@ -95,7 +95,7 @@ export default function ClientDashboard() {
             <div className="p-12 text-center">
               <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">لا توجد طلبات بعد</p>
-              <Link href="/dashboard/client/new-request" className="text-orange-500 text-sm mt-2 inline-block hover:underline">
+              <Link href="/client/new-request" className="text-orange-500 text-sm mt-2 inline-block hover:underline">
                 أنشئ طلبك الأول
               </Link>
             </div>

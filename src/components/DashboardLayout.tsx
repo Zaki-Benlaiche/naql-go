@@ -11,13 +11,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const links = isClient
     ? [
-        { href: "/dashboard/client", label: "لوحة التحكم", icon: LayoutDashboard },
-        { href: "/dashboard/client/new-request", label: "طلب جديد", icon: PlusCircle },
-        { href: "/dashboard/client/requests", label: "طلباتي", icon: List },
+        { href: "/client", label: "لوحة التحكم", icon: LayoutDashboard },
+        { href: "/client/new-request", label: "طلب جديد", icon: PlusCircle },
+        { href: "/client/requests", label: "طلباتي", icon: List },
       ]
     : [
-        { href: "/dashboard/transporter", label: "لوحة التحكم", icon: LayoutDashboard },
-        { href: "/dashboard/transporter/browse", label: "تصفح الطلبات", icon: List },
+        { href: "/transporter", label: "لوحة التحكم", icon: LayoutDashboard },
+        { href: "/transporter/browse", label: "تصفح الطلبات", icon: List },
       ];
 
   return (
