@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #f97316;
+  --primary-dark: #ea580c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-geist), "Segoe UI", Arial, sans-serif;
+}

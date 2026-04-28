@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  email     String?  @unique
+  password  String
+  role      String   // CLIENT | TRANSPORTER
+  createdAt DateTime @default(now())
+
+  requests  TransportRequest[] @relation("ClientRequests")
+  bids      Bid[]
+  vehicles  Vehicle[]
+
+  @@map("users")
+}
+
+model Vehicle {
+  id            String   @id @default(cuid())
+  type          String
+  model         String
+  plate         String   @unique
+  capacity      Float
+  transporterId String
+  transporter   User     @relation(fields: [transporterId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@map("vehicles")
+}
+
+model TransportRequest {
+  id            String   @id @default(cuid())
+  clientId      String
+  client        User     @relation("ClientRequests", fields: [clientId], references: [id])
+
+  fromCity      String
+  toCity        String
+  fromAddress   String
+  toAddress     String
+
+  goodsType     String
+  weight        Float
+  description   String?
+
+  status        String   @default("OPEN")
+
+  bids          Bid[]
+  acceptedBidId String?  @unique
+  acceptedBid   Bid?     @relation("AcceptedBid", fields: [acceptedBidId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("transport_requests")
+}
+
+model Bid {
+  id            String   @id @default(cuid())
+  requestId     String
+  request       TransportRequest @relation(fields: [requestId], references: [id])
+  transporterId String
+  transporter   User     @relation(fields: [transporterId], references: [id])
+
+  price         Float
+  estimatedTime String
+  note          String?
+
+  status        String   @default("PENDING")
+
+  acceptedRequest TransportRequest? @relation("AcceptedBid")
+
+  createdAt     DateTime @default(now())
+
+  @@unique([requestId, transporterId])
+  @@map("bids")
+}
