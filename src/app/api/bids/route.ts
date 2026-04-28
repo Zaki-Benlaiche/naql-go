@@ -3,13 +3,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "TRANSPORTER") {
-    return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  }
+export const dynamic = "force-dynamic";
 
+export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "TRANSPORTER") {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+    }
+
     const { requestId, price, estimatedTime, note } = await req.json();
 
     const request = await prisma.transportRequest.findUnique({ where: { id: requestId } });
@@ -28,7 +30,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(bid, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error("[bids POST]", error);
     return NextResponse.json({ error: "خطأ في الخادم" }, { status: 500 });
   }
 }

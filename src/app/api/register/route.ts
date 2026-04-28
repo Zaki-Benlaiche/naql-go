@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const { name, phone, email, password, role } = await req.json();
@@ -21,7 +23,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ id: user.id, name: user.name, role: user.role }, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error("[register]", error);
     return NextResponse.json({ error: "خطأ في الخادم" }, { status: 500 });
   }
 }

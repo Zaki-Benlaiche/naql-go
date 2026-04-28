@@ -3,18 +3,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "CLIENT") {
-    return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
-  }
+export const dynamic = "force-dynamic";
 
+export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "CLIENT") {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+    }
+
     const { bidId, requestId } = await req.json();
 
-    const request = await prisma.transportRequest.findUnique({
-      where: { id: requestId },
-    });
+    const request = await prisma.transportRequest.findUnique({ where: { id: requestId } });
 
     if (!request || request.clientId !== session.user.id || request.status !== "OPEN") {
       return NextResponse.json({ error: "غير مصرح أو الطلب مغلق" }, { status: 400 });
@@ -36,7 +36,8 @@ export async function POST(req: NextRequest) {
     ]);
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error("[bids/accept]", error);
     return NextResponse.json({ error: "خطأ في الخادم" }, { status: 500 });
   }
 }
