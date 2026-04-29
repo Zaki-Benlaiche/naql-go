@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle, Star } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle, Star, XCircle, Trash2 } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { GpsTrackButton } from "@/components/GpsShare";
 import { useLanguage } from "@/context/LanguageContext";
@@ -113,6 +113,8 @@ export default function RequestsPage() {
   const [loading, setLoading]     = useState(true);
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [accepting, setAccepting] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<string | null>(null);
+  const [deleting, setDeleting]   = useState<string | null>(null);
   const [toast, setToast]         = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
   const statusDescLabel = (s: string) => {
@@ -131,6 +133,30 @@ export default function RequestsPage() {
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 4000);
+  }
+
+  async function cancelRequest(requestId: string) {
+    if (!confirm(tr("cancel_confirm"))) return;
+    setCancelling(requestId);
+    try {
+      const res = await fetch(`/api/requests/${requestId}`, { method: "PATCH" });
+      const data = await res.json();
+      if (res.ok) { showToast("success", tr("request_cancelled")); await load(); }
+      else showToast("error", data.error || tr("error_occurred"));
+    } catch { showToast("error", tr("error_occurred")); }
+    finally { setCancelling(null); }
+  }
+
+  async function deleteRequest(requestId: string) {
+    if (!confirm(tr("delete_confirm"))) return;
+    setDeleting(requestId);
+    try {
+      const res = await fetch(`/api/requests/${requestId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok) { showToast("success", tr("request_deleted")); await load(); setExpanded(null); }
+      else showToast("error", data.error || tr("error_occurred"));
+    } catch { showToast("error", tr("error_occurred")); }
+    finally { setDeleting(null); }
   }
 
   async function acceptBid(bidId: string, requestId: string) {
@@ -250,6 +276,36 @@ export default function RequestsPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
                         <ChatPanel requestId={req.id} myRole="CLIENT" />
                         {req.status === "IN_TRANSIT" && <GpsTrackButton requestId={req.id} />}
+                      </div>
+                    )}
+
+                    {/* Cancel / Delete actions */}
+                    {(req.status === "OPEN" || req.status === "CANCELLED") && (
+                      <div className="flex gap-2 mb-5">
+                        {req.status === "OPEN" && (
+                          <button
+                            onClick={() => cancelRequest(req.id)}
+                            disabled={cancelling === req.id}
+                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-orange-200 text-orange-600 hover:bg-orange-50 transition-colors disabled:opacity-50"
+                          >
+                            {cancelling === req.id
+                              ? <span className="w-3 h-3 border-2 border-orange-400/40 border-t-orange-500 rounded-full animate-spin" />
+                              : <XCircle className="w-3.5 h-3.5" />
+                            }
+                            {tr("cancel_request")}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteRequest(req.id)}
+                          disabled={deleting === req.id}
+                          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                          {deleting === req.id
+                            ? <span className="w-3 h-3 border-2 border-red-400/40 border-t-red-500 rounded-full animate-spin" />
+                            : <Trash2 className="w-3.5 h-3.5" />
+                          }
+                          {tr("delete_request")}
+                        </button>
                       </div>
                     )}
 
