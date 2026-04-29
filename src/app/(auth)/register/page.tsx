@@ -4,11 +4,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Truck, Package } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultRole = searchParams.get("role") || "CLIENT";
+  const { lang, setLang, tr } = useLanguage();
 
   const [role, setRole] = useState<"CLIENT" | "TRANSPORTER">(defaultRole as "CLIENT" | "TRANSPORTER");
   const [name, setName] = useState("");
@@ -32,7 +34,7 @@ function RegisterForm() {
     const data = await res.json();
 
     if (!res.ok) {
-      setError(data.error || "حدث خطأ");
+      setError(data.error || tr("error_occurred"));
       setLoading(false);
       return;
     }
@@ -45,13 +47,21 @@ function RegisterForm() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
-              <Truck className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900">NaqlGo</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">إنشاء حساب جديد</h1>
+          <div className="flex items-center justify-between mb-6">
+            <Link href="/" className="inline-flex items-center gap-2">
+              <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
+                <Truck className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-2xl font-bold text-gray-900">NaqlGo</span>
+            </Link>
+            <button
+              onClick={() => setLang(lang === "ar" ? "fr" : "ar")}
+              className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-orange-300 hover:text-orange-500 transition-colors"
+            >
+              {lang === "ar" ? "FR" : "AR"}
+            </button>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">{tr("create_account")}</h1>
         </div>
 
         {/* Role selector */}
@@ -67,9 +77,9 @@ function RegisterForm() {
           >
             <Package className={`w-6 h-6 mx-auto mb-2 ${role === "CLIENT" ? "text-orange-500" : "text-gray-400"}`} />
             <div className={`font-semibold text-sm ${role === "CLIENT" ? "text-orange-600" : "text-gray-600"}`}>
-              عميل
+              {tr("role_client")}
             </div>
-            <div className="text-xs text-gray-400 mt-1">أريد نقل بضائع</div>
+            <div className="text-xs text-gray-400 mt-1">{tr("role_client_sub")}</div>
           </button>
           <button
             type="button"
@@ -82,27 +92,27 @@ function RegisterForm() {
           >
             <Truck className={`w-6 h-6 mx-auto mb-2 ${role === "TRANSPORTER" ? "text-orange-500" : "text-gray-400"}`} />
             <div className={`font-semibold text-sm ${role === "TRANSPORTER" ? "text-orange-600" : "text-gray-600"}`}>
-              ناقل
+              {tr("role_transporter")}
             </div>
-            <div className="text-xs text-gray-400 mt-1">أملك مركبة</div>
+            <div className="text-xs text-gray-400 mt-1">{tr("role_transporter_sub")}</div>
           </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">الاسم الكامل</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{tr("full_name")}</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="محمد بن علي"
+                placeholder={tr("name_placeholder")}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{tr("phone_label")}</label>
               <input
                 type="tel"
                 value={phone}
@@ -115,24 +125,24 @@ function RegisterForm() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                البريد الإلكتروني <span className="text-gray-400 font-normal">(اختياري)</span>
+                {tr("email_label")} <span className="text-gray-400 font-normal">{tr("email_optional")}</span>
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@email.com"
+                placeholder={tr("email_placeholder")}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">كلمة المرور</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{tr("password_label")}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="8 أحرف على الأقل"
+                placeholder={tr("password_min")}
                 minLength={8}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
                 required
@@ -148,15 +158,15 @@ function RegisterForm() {
               disabled={loading}
               className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-3 rounded-xl transition-colors mt-2"
             >
-              {loading ? "جارٍ التسجيل..." : "إنشاء الحساب"}
+              {loading ? tr("creating") : tr("create_btn")}
             </button>
           </form>
         </div>
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          لديك حساب بالفعل؟{" "}
+          {tr("have_account")}{" "}
           <Link href="/login" className="text-orange-500 font-semibold hover:underline">
-            سجّل دخولك
+            {tr("login_link")}
           </Link>
         </p>
       </div>

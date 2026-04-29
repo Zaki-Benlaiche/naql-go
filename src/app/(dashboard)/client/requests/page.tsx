@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Package, ChevronDown, ChevronUp, Phone } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Bid = {
   id: string;
@@ -26,19 +27,27 @@ type Request = {
   bids: Bid[];
 };
 
-const statusMap: Record<string, { label: string; color: string }> = {
-  OPEN: { label: "مفتوح — ينتظر العروض", color: "bg-blue-100 text-blue-700" },
-  ACCEPTED: { label: "تم قبول عرض", color: "bg-green-100 text-green-700" },
-  IN_TRANSIT: { label: "في الطريق", color: "bg-orange-100 text-orange-700" },
-  DELIVERED: { label: "تم التسليم", color: "bg-gray-100 text-gray-700" },
-  CANCELLED: { label: "ملغي", color: "bg-red-100 text-red-700" },
+const statusColors: Record<string, string> = {
+  OPEN: "bg-blue-100 text-blue-700",
+  ACCEPTED: "bg-green-100 text-green-700",
+  IN_TRANSIT: "bg-orange-100 text-orange-700",
+  DELIVERED: "bg-gray-100 text-gray-700",
+  CANCELLED: "bg-red-100 text-red-700",
 };
 
 export default function RequestsPage() {
+  const { tr } = useLanguage();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [accepting, setAccepting] = useState<string | null>(null);
+
+  const statusDescLabel = (s: string) => {
+    if (s === "OPEN") return tr("status_open_waiting");
+    if (s === "ACCEPTED") return tr("status_accepted_bid");
+    const key = `status_${s}` as Parameters<typeof tr>[0];
+    return tr(key);
+  };
 
   async function load() {
     const res = await fetch("/api/requests");
@@ -62,14 +71,14 @@ export default function RequestsPage() {
   return (
     <DashboardLayout>
       <div className="max-w-3xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">طلباتي</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-8">{tr("requests_title")}</h1>
 
         {loading ? (
-          <div className="text-center py-12 text-gray-400">جارٍ التحميل...</div>
+          <div className="text-center py-12 text-gray-400">{tr("loading")}</div>
         ) : requests.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
             <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-500">لا توجد طلبات بعد</p>
+            <p className="text-gray-500">{tr("no_requests")}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -88,12 +97,14 @@ export default function RequestsPage() {
                         <div className="font-semibold text-gray-900">
                           {req.fromCity} ← {req.toCity}
                         </div>
-                        <div className="text-sm text-gray-400 mt-0.5">{req.weight} كغ • {req.bids.length} عرض</div>
+                        <div className="text-sm text-gray-400 mt-0.5">
+                          {req.weight} {tr("kg_suffix")} • {req.bids.length} {tr("bids_count")}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-xs font-medium px-3 py-1 rounded-full ${statusMap[req.status]?.color}`}>
-                        {statusMap[req.status]?.label}
+                      <span className={`text-xs font-medium px-3 py-1 rounded-full ${statusColors[req.status]}`}>
+                        {statusDescLabel(req.status)}
                       </span>
                       {expanded === req.id ? (
                         <ChevronUp className="w-4 h-4 text-gray-400" />
@@ -107,20 +118,22 @@ export default function RequestsPage() {
                 {expanded === req.id && (
                   <div className="border-t border-gray-100 p-5">
                     <div className="grid grid-cols-2 gap-4 text-sm mb-5">
-                      <div><span className="text-gray-400">من:</span> {req.fromAddress}، {req.fromCity}</div>
-                      <div><span className="text-gray-400">إلى:</span> {req.toAddress}، {req.toCity}</div>
+                      <div><span className="text-gray-400">{tr("from_label")}</span> {req.fromAddress}، {req.fromCity}</div>
+                      <div><span className="text-gray-400">{tr("to_label")}</span> {req.toAddress}، {req.toCity}</div>
                       {req.description && (
-                        <div className="col-span-2"><span className="text-gray-400">ملاحظة:</span> {req.description}</div>
+                        <div className="col-span-2"><span className="text-gray-400">{tr("note_label")}</span> {req.description}</div>
                       )}
                     </div>
 
                     {req.bids.length === 0 ? (
                       <div className="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-xl">
-                        لم يصل أي عرض بعد — يتم إشعار الناقلين
+                        {tr("waiting_bids")}
                       </div>
                     ) : (
                       <div>
-                        <h3 className="font-semibold text-gray-900 mb-3">العروض المقدّمة ({req.bids.length})</h3>
+                        <h3 className="font-semibold text-gray-900 mb-3">
+                          {tr("bids_received")} ({req.bids.length})
+                        </h3>
                         <div className="space-y-3">
                           {req.bids.map((bid) => (
                             <div
@@ -135,11 +148,13 @@ export default function RequestsPage() {
                                 <div>
                                   <div className="font-semibold text-gray-900">{bid.transporter.name}</div>
                                   <div className="text-sm text-gray-500 mt-0.5">
-                                    {bid.estimatedTime} — {bid.note || "بدون ملاحظات"}
+                                    {bid.estimatedTime} — {bid.note || tr("no_notes")}
                                   </div>
                                 </div>
                                 <div className="text-left">
-                                  <div className="text-xl font-bold text-orange-500">{bid.price.toLocaleString()} دج</div>
+                                  <div className="text-xl font-bold text-orange-500">
+                                    {bid.price.toLocaleString()} {tr("dz_suffix")}
+                                  </div>
                                   <div className="flex items-center gap-2 mt-2 justify-end">
                                     <a
                                       href={`tel:${bid.transporter.phone}`}
@@ -154,12 +169,12 @@ export default function RequestsPage() {
                                         disabled={accepting === bid.id}
                                         className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:bg-orange-300"
                                       >
-                                        {accepting === bid.id ? "..." : "قبول"}
+                                        {accepting === bid.id ? "..." : tr("accept_btn")}
                                       </button>
                                     )}
                                     {bid.status === "ACCEPTED" && (
                                       <span className="bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
-                                        مقبول ✓
+                                        {tr("accepted_badge")}
                                       </span>
                                     )}
                                   </div>

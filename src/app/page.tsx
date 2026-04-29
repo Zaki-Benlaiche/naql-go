@@ -1,7 +1,39 @@
+"use client";
 import Link from "next/link";
 import { Truck, Package, Clock, Star, ArrowLeft, CheckCircle } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function Home() {
+  const { lang, setLang, tr } = useLanguage();
+
+  const steps = [
+    { icon: Package, title: tr("step1_title"), desc: tr("step1_desc") },
+    { icon: Star, title: tr("step2_title"), desc: tr("step2_desc") },
+    { icon: Clock, title: tr("step3_title"), desc: tr("step3_desc") },
+  ];
+
+  const services = [
+    { emoji: "📦", name: tr("srv1_name"), sub: tr("srv1_sub") },
+    { emoji: "🛋️", name: tr("srv2_name"), sub: tr("srv2_sub") },
+    { emoji: "🏗️", name: tr("srv3_name"), sub: tr("srv3_sub") },
+    { emoji: "🌡️", name: tr("srv4_name"), sub: tr("srv4_sub") },
+    { emoji: "🚛", name: tr("srv5_name"), sub: tr("srv5_sub") },
+  ];
+
+  const stats = [
+    { value: "500+", label: tr("stat1_label") },
+    { value: "48", label: tr("stat2_label") },
+    { value: "2000+", label: tr("stat3_label") },
+    { value: "4.8★", label: tr("stat4_label") },
+  ];
+
+  const features = [
+    { title: tr("feat1_title"), desc: tr("feat1_desc") },
+    { title: tr("feat2_title"), desc: tr("feat2_desc") },
+    { title: tr("feat3_title"), desc: tr("feat3_desc") },
+    { title: tr("feat4_title"), desc: tr("feat4_desc") },
+  ];
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
@@ -13,14 +45,21 @@ export default function Home() {
           <span className="text-xl font-bold text-gray-900">NaqlGo</span>
         </div>
         <div className="flex items-center gap-3">
+          {/* Language toggle */}
+          <button
+            onClick={() => setLang(lang === "ar" ? "fr" : "ar")}
+            className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-orange-300 hover:text-orange-500 transition-colors"
+          >
+            {lang === "ar" ? "FR" : "AR"}
+          </button>
           <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium text-sm px-4 py-2">
-            تسجيل الدخول
+            {tr("btn_login")}
           </Link>
           <Link
             href="/register"
             className="bg-orange-500 hover:bg-orange-600 text-white font-medium text-sm px-5 py-2 rounded-xl transition-colors"
           >
-            ابدأ الآن
+            {tr("btn_start")}
           </Link>
         </div>
       </nav>
@@ -29,30 +68,27 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-6 pt-20 pb-24 text-center">
         <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-600 text-sm font-medium px-4 py-2 rounded-full mb-6">
           <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-          منصة النقل والشحن الأولى في الجزائر
+          {tr("tagline")}
         </div>
         <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-6">
-          انقل بضائعك بأفضل سعر
+          {tr("hero_title")}
           <br />
-          <span className="text-orange-500">في الجزائر كلها</span>
+          <span className="text-orange-500">{tr("hero_title2")}</span>
         </h1>
-        <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10">
-          انشر طلب النقل، استقبل عروض الأسعار من الناقلين، واختر الأنسب لك.
-          سريع، موثوق، وبأفضل سعر.
-        </p>
+        <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10">{tr("hero_sub")}</p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link
             href="/register?role=CLIENT"
             className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-4 rounded-2xl text-lg transition-colors flex items-center gap-2"
           >
-            أريد نقل بضائع
+            {tr("btn_client")}
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <Link
             href="/register?role=TRANSPORTER"
             className="border-2 border-gray-200 hover:border-orange-300 text-gray-700 font-semibold px-8 py-4 rounded-2xl text-lg transition-colors"
           >
-            أنا ناقل — سجّل مركبتي
+            {tr("btn_transporter")}
           </Link>
         </div>
       </section>
@@ -60,8 +96,8 @@ export default function Home() {
       {/* How it works */}
       <section className="bg-gray-50 py-20">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">كيف يعمل NaqlGo؟</h2>
-          <p className="text-gray-500 text-center mb-14">ثلاث خطوات بسيطة وبضاعتك في الطريق</p>
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">{tr("how_title")}</h2>
+          <p className="text-gray-500 text-center mb-14">{tr("how_sub")}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {steps.map((step, i) => (
               <div key={i} className="bg-white rounded-2xl p-8 shadow-sm text-center">
@@ -79,8 +115,8 @@ export default function Home() {
 
       {/* Services */}
       <section className="py-20 max-w-6xl mx-auto px-6">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">خدماتنا</h2>
-        <p className="text-gray-500 text-center mb-14">لكل نوع بضاعة الناقل المناسب</p>
+        <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">{tr("services_title")}</h2>
+        <p className="text-gray-500 text-center mb-14">{tr("services_sub")}</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {services.map((s, i) => (
             <div key={i} className="border border-gray-100 rounded-2xl p-5 text-center hover:border-orange-200 hover:shadow-sm transition-all">
@@ -106,7 +142,7 @@ export default function Home() {
 
       {/* Why NaqlGo */}
       <section className="py-20 max-w-6xl mx-auto px-6">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-14">لماذا NaqlGo؟</h2>
+        <h2 className="text-3xl font-bold text-center text-gray-900 mb-14">{tr("why_title")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {features.map((f, i) => (
             <div key={i} className="flex items-start gap-4 p-6 rounded-2xl bg-gray-50">
@@ -122,13 +158,13 @@ export default function Home() {
 
       {/* CTA */}
       <section className="bg-gray-900 py-20 text-center">
-        <h2 className="text-3xl font-bold text-white mb-4">جاهز تبدأ؟</h2>
-        <p className="text-gray-400 mb-8">سجّل الآن مجاناً وابدأ في الوصول لآلاف الناقلين</p>
+        <h2 className="text-3xl font-bold text-white mb-4">{tr("cta_title")}</h2>
+        <p className="text-gray-400 mb-8">{tr("cta_sub")}</p>
         <Link
           href="/register"
           className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-4 rounded-2xl text-lg transition-colors inline-block"
         >
-          إنشاء حساب مجاني
+          {tr("btn_free")}
         </Link>
       </section>
 
@@ -140,36 +176,8 @@ export default function Home() {
           </div>
           <span className="font-bold text-gray-700">NaqlGo</span>
         </div>
-        © 2025 NaqlGo. جميع الحقوق محفوظة — الجزائر
+        © 2025 NaqlGo. {tr("copyright")}
       </footer>
     </div>
   );
 }
-
-const steps = [
-  { icon: Package, title: "انشر طلبك", desc: "حدد نوع البضاعة، الوزن، نقطة الانطلاق والوجهة في أقل من دقيقة" },
-  { icon: Star, title: "استقبل العروض", desc: "الناقلون القريبون يقدمون أسعارهم وأوقات التسليم — قارن واختر الأنسب" },
-  { icon: Clock, title: "تتبع شحنتك", desc: "راقب رحلة بضاعتك في الوقت الفعلي حتى تصل بأمان" },
-];
-
-const services = [
-  { emoji: "📦", name: "توصيل طرود", sub: "دراجة / سيارة" },
-  { emoji: "🛋️", name: "نقل أثاث", sub: "فان / شاحنة" },
-  { emoji: "🏗️", name: "مواد بناء", sub: "شاحنة ثقيلة" },
-  { emoji: "🌡️", name: "سلسلة باردة", sub: "مبردة" },
-  { emoji: "🚛", name: "بين الولايات", sub: "شحن طويل" },
-];
-
-const stats = [
-  { value: "500+", label: "ناقل مسجل" },
-  { value: "48", label: "ولاية مغطاة" },
-  { value: "2000+", label: "شحنة منجزة" },
-  { value: "4.8★", label: "متوسط التقييم" },
-];
-
-const features = [
-  { title: "نظام المناداة (يعنري)", desc: "الناقلون يتنافسون على طلبك مما يضمن لك أفضل سعر في السوق" },
-  { title: "ناقلون موثّقون", desc: "كل ناقل يمر بعملية التحقق من الهوية والرخصة والمركبة" },
-  { title: "دفع آمن", desc: "ادفع عند الاستلام أو إلكترونياً عبر بريدي موب / CIB" },
-  { title: "دعم على مدار الساعة", desc: "فريق الدعم متاح لحل أي مشكلة في أي وقت" },
-];
