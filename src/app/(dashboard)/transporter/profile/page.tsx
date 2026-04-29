@@ -3,25 +3,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { User, MapPin, Truck, Save, CheckCircle, Info } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-
-const WILAYAS = [
-  "أدرار", "الشلف", "الأغواط", "أم البواقي", "باتنة", "بجاية", "بسكرة",
-  "بشار", "البليدة", "البويرة", "تمنراست", "تبسة", "تلمسان", "تيارت",
-  "تيزي وزو", "الجزائر", "الجلفة", "جيجل", "سطيف", "سعيدة", "سكيكدة",
-  "سيدي بلعباس", "عنابة", "قالمة", "قسنطينة", "المدية", "مستغانم", "المسيلة",
-  "معسكر", "ورقلة", "وهران", "البيض", "إليزي", "برج بوعريريج", "بومرداس",
-  "الطارف", "تندوف", "تيسمسيلت", "الوادي", "خنشلة", "سوق أهراس",
-  "تيبازة", "ميلة", "عين الدفلى", "النعامة", "عين تيموشنت", "غرداية",
-  "غليزان", "تيميمون", "برج باجي مختار", "أولاد جلال", "بني عباس",
-  "عين صالح", "عين قزام", "تقرت", "جانت", "المغير", "المنيعة",
-];
-
-const VEHICLE_TYPES = [
-  { value: "pickup",      icon: "🛻", labelAr: "بيك آب",        labelFr: "Pick-up"       },
-  { value: "van",         icon: "🚐", labelAr: "فان",            labelFr: "Fourgonnette"  },
-  { value: "light_truck", icon: "🚚", labelAr: "شاحنة خفيفة",   labelFr: "Camion léger"  },
-  { value: "heavy_truck", icon: "🚛", labelAr: "شاحنة ثقيلة",   labelFr: "Camion lourd"  },
-];
+import { WILAYAS, VEHICLE_TYPES } from "@/lib/constants";
 
 type Profile = {
   id: string;

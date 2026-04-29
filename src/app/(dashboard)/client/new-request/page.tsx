@@ -3,29 +3,11 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useLanguage } from "@/context/LanguageContext";
+import { WILAYAS, VEHICLE_TYPES } from "@/lib/constants";
 import {
   ArrowRight, ArrowLeft, MapPin, Star,
   CheckCircle, ChevronDown, WifiOff, RefreshCw, Truck,
 } from "lucide-react";
-
-// ── Data ────────────────────────────────────────────────────
-const WILAYAS = [
-  "أدرار","الشلف","الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار",
-  "البليدة","البويرة","تمنراست","تبسة","تلمسان","تيارت","تيزي وزو","الجزائر",
-  "الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي بلعباس","عنابة","قالمة",
-  "قسنطينة","المدية","مستغانم","المسيلة","معسكر","ورقلة","وهران","البيض",
-  "إليزي","برج بوعريريج","بومرداس","الطارف","تندوف","تيسمسيلت","الوادي",
-  "خنشلة","سوق أهراس","تيبازة","ميلة","عين الدفلى","النعامة","عين تموشنت",
-  "غرداية","غليزان","تيميمون","برج باجي مختار","أولاد جلال","بني عباس",
-  "إن صالح","إن قزام","تقرت","جانت","المغير","المنيعة",
-];
-
-const VEHICLE_TYPES = [
-  { value: "car",         labelAr: "سيارة",        labelFr: "Voiture",       icon: "🚗", desc_ar: "حتى 500 كغ",    desc_fr: "Jusqu'à 500 kg" },
-  { value: "small_truck", labelAr: "شاحنة صغيرة",  labelFr: "Petit camion",  icon: "🚐", desc_ar: "500 كغ – 3 طن", desc_fr: "500 kg – 3 T" },
-  { value: "big_truck",   labelAr: "شاحنة كبيرة",  labelFr: "Grand camion",  icon: "🚛", desc_ar: "3 طن فأكثر",    desc_fr: "3 T et plus" },
-  { value: "motorcycle",  labelAr: "دراجة توصيل",  labelFr: "Moto livraison",icon: "🏍️", desc_ar: "طرود صغيرة",   desc_fr: "Petits colis" },
-];
 
 const GOODS_TYPES = [
   { value: "furniture",         labelAr: "أثاث",        labelFr: "Mobilier",    icon: "🛋️" },
@@ -294,7 +276,7 @@ export default function NewRequestPage() {
                     }`}>
                     <span className="text-2xl mb-2">{v.icon}</span>
                     <p className="font-bold text-slate-900 text-sm">{ar ? v.labelAr : v.labelFr}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{ar ? v.desc_ar : v.desc_fr}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{ar ? v.descAr : v.descFr}</p>
                     {selectedVehicle === v.value && <CheckCircle className="w-4 h-4 text-orange-500 mt-2" />}
                   </button>
                 ))}
