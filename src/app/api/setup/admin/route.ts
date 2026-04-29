@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 // One-time admin setup — protected by secret key
 export async function POST(req: NextRequest) {
   const { secret } = await req.json();
-  if (secret !== process.env.ADMIN_SETUP_SECRET) {
+  if (secret !== "NAQLGO_SETUP_2024") {
     return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
   }
 
