@@ -41,6 +41,7 @@ export default function BrowsePage() {
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState("");
+  const [bidError, setBidError] = useState("");
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setRefreshing(true);
@@ -65,18 +66,27 @@ export default function BrowsePage() {
 
   async function submitBid() {
     if (!bidModal) return;
+    setBidError("");
     setSubmitting(true);
-    const res = await fetch("/api/bids", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ requestId: bidModal.id, price, estimatedTime, note }),
-    });
-    setSubmitting(false);
-    if (res.ok) {
-      setSuccess(tr("bid_success"));
-      setBidModal(null); setPrice(""); setEstimatedTime(""); setNote("");
-      load();
-      setTimeout(() => setSuccess(""), 3000);
+    try {
+      const res = await fetch("/api/bids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: bidModal.id, price, estimatedTime, note }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess(tr("bid_success"));
+        setBidModal(null); setPrice(""); setEstimatedTime(""); setNote("");
+        load();
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setBidError(data.error || "حدث خطأ، حاول مجدداً");
+      }
+    } catch {
+      setBidError("تعذر الاتصال بالخادم");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -187,7 +197,7 @@ export default function BrowsePage() {
                           {tr("already_bid")}
                         </span>
                       ) : (
-                        <button onClick={() => setBidModal(req)}
+                        <button onClick={() => { setBidModal(req); setBidError(""); }}
                           className="bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs md:text-sm px-3 md:px-5 py-2 md:py-2.5 rounded-xl transition-colors whitespace-nowrap">
                           {tr("submit_bid_btn")}
                         </button>
@@ -244,6 +254,12 @@ export default function BrowsePage() {
                   className={`${inputClass} resize-none`} />
               </div>
             </div>
+
+            {bidError && (
+              <div className="mt-4 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">
+                {bidError}
+              </div>
+            )}
 
             <div className="flex gap-3 mt-6">
               <button onClick={() => setBidModal(null)}
