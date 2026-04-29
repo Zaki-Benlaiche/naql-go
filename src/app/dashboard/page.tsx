@@ -11,6 +11,7 @@ export default function DashboardRedirect() {
     if (status === "loading") return;
     if (!session) { router.push("/login"); return; }
     if (session.user.role === "CLIENT") router.push("/client");
+    else if (session.user.role === "ADMIN") router.push("/admin");
     else router.push("/transporter");
   }, [session, status, router]);
 
