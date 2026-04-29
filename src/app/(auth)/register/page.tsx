@@ -37,7 +37,7 @@ function RegisterForm() {
       return;
     }
 
-    await signIn("credentials", { phone, password, redirect: false });
+    await signIn("credentials", { identifier: phone, password, redirect: false });
     router.push("/dashboard");
   }
 

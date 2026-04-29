@@ -7,7 +7,7 @@ import { Truck, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
@@ -19,7 +19,7 @@ export default function LoginPage() {
     setError("");
 
     const result = await signIn("credentials", {
-      phone,
+      identifier,
       password,
       redirect: false,
     });
@@ -27,7 +27,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError("رقم الهاتف أو كلمة المرور غير صحيحة");
+      setError("معلومات الدخول غير صحيحة");
     } else {
       router.push("/dashboard");
     }
@@ -50,12 +50,14 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                رقم الهاتف أو البريد الإلكتروني
+              </label>
               <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="05XXXXXXXX"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="05XXXXXXXX أو example@email.com"
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
                 required
               />

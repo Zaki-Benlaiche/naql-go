@@ -13,14 +13,22 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        phone: { label: "Phone", type: "text" },
+        identifier: { label: "Phone or Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.phone || !credentials?.password) return null;
+        if (!credentials?.identifier || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { phone: credentials.phone },
+        const identifier = credentials.identifier.trim();
+
+        // Search by phone or email
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { phone: identifier },
+              { email: identifier },
+            ],
+          },
         });
 
         if (!user) return null;
