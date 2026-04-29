@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Package, X } from "lucide-react";
+import { Package, X, RefreshCw } from "lucide-react";
 
 type Request = {
   id: string;
@@ -27,9 +27,14 @@ const goodsMap: Record<string, string> = {
   other: "📁 أخرى",
 };
 
+const AUTO_REFRESH = 30; // seconds
+
 export default function BrowsePage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [countdown, setCountdown] = useState(AUTO_REFRESH);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [bidModal, setBidModal] = useState<Request | null>(null);
   const [price, setPrice] = useState("");
   const [estimatedTime, setEstimatedTime] = useState("");
@@ -37,13 +42,36 @@ export default function BrowsePage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState("");
 
-  async function load() {
-    const res = await fetch("/api/requests");
-    setRequests(await res.json());
-    setLoading(false);
-  }
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setRefreshing(true);
+    try {
+      const res = await fetch("/api/requests", { cache: "no-store" });
+      const data = await res.json();
+      setRequests(Array.isArray(data) ? data : []);
+      setLastUpdated(new Date());
+      setCountdown(AUTO_REFRESH);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  // Initial load
+  useEffect(() => { load(); }, [load]);
+
+  // Auto-refresh every 30s
+  useEffect(() => {
+    const interval = setInterval(() => load(true), AUTO_REFRESH * 1000);
+    return () => clearInterval(interval);
+  }, [load]);
+
+  // Countdown timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((c) => (c <= 1 ? AUTO_REFRESH : c - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   async function submitBid() {
     if (!bidModal) return;
@@ -66,11 +94,40 @@ export default function BrowsePage() {
   return (
     <DashboardLayout>
       <div className="max-w-3xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">الطلبات المتاحة</h1>
-        <p className="text-gray-500 text-sm mb-8">اختر طلباً وقدّم عرض سعرك</p>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">الطلبات المتاحة</h1>
+            {lastUpdated && (
+              <p className="text-xs text-gray-400 mt-1">
+                آخر تحديث: {lastUpdated.toLocaleTimeString("ar-DZ")}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Countdown badge */}
+            <div className="flex items-center gap-1.5 bg-gray-100 text-gray-500 text-xs px-3 py-1.5 rounded-full">
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+              تحديث تلقائي خلال {countdown}ث
+            </div>
+            {/* Manual refresh button */}
+            <button
+              onClick={() => load()}
+              disabled={refreshing}
+              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              تحديث
+            </button>
+          </div>
+        </div>
+
+        <p className="text-gray-500 text-sm mb-6">اختر طلباً وقدّم عرض سعرك</p>
 
         {success && (
-          <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-xl mb-4">{success}</div>
+          <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-xl mb-4">
+            {success}
+          </div>
         )}
 
         {loading ? (
@@ -78,7 +135,8 @@ export default function BrowsePage() {
         ) : requests.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
             <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-500">لا توجد طلبات متاحة حالياً</p>
+            <p className="text-gray-500 font-medium">لا توجد طلبات متاحة حالياً</p>
+            <p className="text-gray-400 text-sm mt-1">سيتم التحديث تلقائياً كل {AUTO_REFRESH} ثانية</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -99,7 +157,7 @@ export default function BrowsePage() {
                           {goodsMap[req.goodsType] || req.goodsType} • {req.weight} كغ
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          {req.fromAddress}، {req.fromCity} → {req.toAddress}، {req.toCity}
+                          {req.fromAddress}، {req.fromCity} ← {req.toAddress}، {req.toCity}
                         </div>
                         {req.description && (
                           <div className="text-xs text-gray-500 mt-2 bg-gray-50 rounded-lg px-3 py-2">
@@ -158,7 +216,6 @@ export default function BrowsePage() {
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="مثال: 5000"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                  required
                 />
               </div>
               <div>
