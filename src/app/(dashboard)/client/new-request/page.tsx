@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { ArrowRight, ArrowLeft, Calculator } from "lucide-react";
+import { ArrowRight, ArrowLeft, Calculator, Tag, CheckCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import { calcPrice } from "@/lib/pricing";
@@ -27,7 +27,14 @@ export default function NewRequestPage() {
   const [form, setForm] = useState({
     fromCity: "", toCity: "", fromAddress: "", toAddress: "",
     goodsType: "", vehicleType: "any", size: "medium", weight: "", description: "",
+    scheduledDate: "", scheduledTime: "", isScheduled: false,
   });
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("");
+  const [coupon, setCoupon] = useState<{ discountPercent: number; code: string; couponId: string } | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
 
   const goodsTypes = [
     { value: "packages", label: tr("goods_packages") },
@@ -62,6 +69,20 @@ export default function NewRequestPage() {
     setForm(prev => ({ ...prev, [key]: value }));
   }
 
+  async function applyCoupon() {
+    if (!couponCode.trim()) return;
+    setCheckingCoupon(true); setCouponError("");
+    const res = await fetch("/api/coupons/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: couponCode }),
+    });
+    const data = await res.json();
+    setCheckingCoupon(false);
+    if (!res.ok) { setCouponError(data.error); setCoupon(null); }
+    else setCoupon(data);
+  }
+
   // Live price estimate
   const priceEstimate = useMemo(() => {
     const w = parseFloat(form.weight);
@@ -72,12 +93,22 @@ export default function NewRequestPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError("");
+    let scheduledAt: string | null = null;
+    if (form.isScheduled && form.scheduledDate) {
+      scheduledAt = new Date(`${form.scheduledDate}T${form.scheduledTime || "08:00"}`).toISOString();
+    }
+    const basePrice = priceEstimate ? Math.round((priceEstimate.minPrice + priceEstimate.maxPrice) / 2) : null;
+    const finalPrice = basePrice && coupon ? Math.round(basePrice * (1 - coupon.discountPercent / 100)) : basePrice;
+
     const res = await fetch("/api/requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...form,
-        estimatedPrice: priceEstimate ? Math.round((priceEstimate.minPrice + priceEstimate.maxPrice) / 2) : null,
+        scheduledAt,
+        estimatedPrice: basePrice,
+        discountPercent: coupon?.discountPercent ?? null,
+        finalPrice,
       }),
     });
     const data = await res.json();
@@ -209,6 +240,82 @@ export default function NewRequestPage() {
             </div>
           </div>
 
+          {/* Schedule section */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
+            <h2 className="font-bold text-gray-900 mb-4 text-sm md:text-base flex items-center gap-2">
+              <Clock className="w-4 h-4 text-orange-400" />
+              {tr("schedule_section")}
+            </h2>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {[
+                { value: false, label: tr("schedule_now"), icon: "⚡" },
+                { value: true,  label: tr("schedule_later"), icon: "📅" },
+              ].map(o => (
+                <button key={String(o.value)} type="button"
+                  onClick={() => setForm(p => ({ ...p, isScheduled: o.value }))}
+                  className={`py-3 rounded-xl border-2 text-xs font-medium text-center transition-all ${
+                    form.isScheduled === o.value
+                      ? "border-orange-500 bg-orange-50 text-orange-700"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="text-base block mb-0.5">{o.icon}</span>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            {form.isScheduled && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>{tr("schedule_date")}</label>
+                  <input type="date" value={form.scheduledDate}
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={e => setForm(p => ({ ...p, scheduledDate: e.target.value }))}
+                    className={inputClass} required={form.isScheduled} />
+                </div>
+                <div>
+                  <label className={labelClass}>{tr("schedule_time")}</label>
+                  <input type="time" value={form.scheduledTime}
+                    onChange={e => setForm(p => ({ ...p, scheduledTime: e.target.value }))}
+                    className={inputClass} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Coupon section */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
+            <h2 className="font-bold text-gray-900 mb-3 text-sm md:text-base flex items-center gap-2">
+              <Tag className="w-4 h-4 text-orange-400" />
+              {tr("coupon_section")}
+            </h2>
+            {coupon ? (
+              <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+                <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-green-700">{coupon.code} — {coupon.discountPercent}% {tr("coupon_discount")}</p>
+                  <p className="text-xs text-green-600">{tr("coupon_applied")}</p>
+                </div>
+                <button type="button" onClick={() => { setCoupon(null); setCouponCode(""); }}
+                  className="ms-auto text-xs text-gray-400 hover:text-red-500 transition-colors">✕</button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder={tr("coupon_placeholder")}
+                  className={`${inputClass} flex-1 uppercase tracking-widest font-mono`} />
+                <button type="button" onClick={applyCoupon} disabled={checkingCoupon || !couponCode.trim()}
+                  className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold text-sm px-4 rounded-xl transition-colors shrink-0">
+                  {checkingCoupon
+                    ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin block" />
+                    : tr("coupon_apply")
+                  }
+                </button>
+              </div>
+            )}
+            {couponError && <p className="text-red-500 text-xs mt-2">{couponError}</p>}
+          </div>
+
           {/* Price estimate card */}
           {priceEstimate && (
             <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 md:p-5">
@@ -225,9 +332,20 @@ export default function NewRequestPage() {
                 </div>
                 <div className="bg-white rounded-xl px-3 py-2.5">
                   <p className="text-xs text-gray-400 font-medium mb-0.5">{tr("price_range")}</p>
-                  <p className="font-bold text-orange-600 text-sm">
-                    {priceEstimate.minPrice.toLocaleString()} – {priceEstimate.maxPrice.toLocaleString()} {tr("dz_suffix")}
-                  </p>
+                  {coupon ? (
+                    <div>
+                      <p className="text-xs line-through text-gray-400">
+                        {priceEstimate.minPrice.toLocaleString()} – {priceEstimate.maxPrice.toLocaleString()} {tr("dz_suffix")}
+                      </p>
+                      <p className="font-bold text-green-600 text-sm">
+                        {Math.round(priceEstimate.minPrice * (1 - coupon.discountPercent / 100)).toLocaleString()} – {Math.round(priceEstimate.maxPrice * (1 - coupon.discountPercent / 100)).toLocaleString()} {tr("dz_suffix")}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="font-bold text-orange-600 text-sm">
+                      {priceEstimate.minPrice.toLocaleString()} – {priceEstimate.maxPrice.toLocaleString()} {tr("dz_suffix")}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

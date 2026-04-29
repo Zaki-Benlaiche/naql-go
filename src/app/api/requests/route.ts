@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { fromCity, toCity, fromAddress, toAddress, goodsType, vehicleType, size, weight, description, estimatedPrice } = body;
+    const { fromCity, toCity, fromAddress, toAddress, goodsType, vehicleType, size,
+            weight, description, estimatedPrice, scheduledAt, discountPercent, finalPrice } = body;
 
     const request = await prisma.transportRequest.create({
       data: {
@@ -64,6 +65,9 @@ export async function POST(req: NextRequest) {
         weight: parseFloat(weight),
         description: description || null,
         estimatedPrice: estimatedPrice ? parseFloat(estimatedPrice) : null,
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        discountPercent: discountPercent ? parseInt(discountPercent) : null,
+        finalPrice: finalPrice ? parseFloat(finalPrice) : null,
       },
     });
 

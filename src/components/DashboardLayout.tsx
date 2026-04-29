@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Truck, LogOut, LayoutDashboard, PlusCircle, List, Globe, Menu, X, Bell, Package, Wifi, WifiOff } from "lucide-react";
+import { Truck, LogOut, LayoutDashboard, PlusCircle, List, Globe, Menu, X, Bell, Package, Wifi, WifiOff, TrendingUp } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -66,6 +66,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         { href: "/transporter", label: tr("dashboard"), icon: LayoutDashboard },
         { href: "/transporter/browse", label: tr("browse_requests"), icon: List },
         { href: "/transporter/orders", label: tr("my_orders"), icon: Package },
+        { href: "/transporter/earnings", label: tr("my_earnings"), icon: TrendingUp },
         { href: "/notifications", label: tr("notifications"), icon: Bell },
       ];
 

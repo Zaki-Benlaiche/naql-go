@@ -196,6 +196,47 @@ export const t = {
     proof_uploaded: "✅ تم رفع صورة التسليم",
     proof_hint: "التقط صورة للبضاعة عند التسليم",
 
+    // Scheduled orders
+    schedule_section: "موعد الاستلام",
+    schedule_now: "الآن (أسرع ما يمكن)",
+    schedule_later: "في وقت لاحق",
+    schedule_date: "تاريخ الاستلام",
+    schedule_time: "وقت الاستلام",
+
+    // Coupons
+    coupon_section: "كود الخصم",
+    coupon_placeholder: "NAQL10",
+    coupon_apply: "تطبيق",
+    coupon_applied: "✅ تم تطبيق الخصم",
+    coupon_invalid: "الكوبون غير صالح",
+    coupon_discount: "خصم",
+
+    // Earnings (transporter)
+    my_earnings: "أرباحي",
+    total_earned: "إجمالي الأرباح",
+    this_month: "هذا الشهر",
+    completed_trips: "الرحلات المكتملة",
+    avg_per_trip: "متوسط كل رحلة",
+    earnings_history: "سجل الأرباح",
+    no_earnings: "لا توجد أرباح بعد",
+
+    // Admin
+    admin_dashboard: "لوحة الإدارة",
+    admin_users: "المستخدمون",
+    admin_orders: "الطلبات",
+    admin_stats: "الإحصائيات",
+    total_users: "إجمالي المستخدمين",
+    total_requests: "إجمالي الطلبات",
+    total_revenue: "الإيرادات التقديرية",
+    new_this_week: "جديد هذا الأسبوع",
+    ban_user: "حظر",
+    unban_user: "إلغاء الحظر",
+    user_banned: "محظور",
+    user_active: "نشط",
+    all_roles: "الكل",
+    search_users: "بحث...",
+    filter_status: "فلترة",
+
     // Orders (transporter view)
     my_orders: "طلباتي المقبولة",
     no_orders: "لا توجد طلبات مقبولة بعد",
@@ -451,6 +492,47 @@ export const t = {
     upload_proof: "Télécharger une photo",
     proof_uploaded: "✅ Photo de livraison téléchargée",
     proof_hint: "Prenez une photo de la marchandise à la livraison",
+
+    // Scheduled orders
+    schedule_section: "Date de prise en charge",
+    schedule_now: "Maintenant (dès que possible)",
+    schedule_later: "Planifier pour plus tard",
+    schedule_date: "Date de prise en charge",
+    schedule_time: "Heure de prise en charge",
+
+    // Coupons
+    coupon_section: "Code de réduction",
+    coupon_placeholder: "NAQL10",
+    coupon_apply: "Appliquer",
+    coupon_applied: "✅ Réduction appliquée",
+    coupon_invalid: "Code invalide",
+    coupon_discount: "Réduction",
+
+    // Earnings (transporter)
+    my_earnings: "Mes revenus",
+    total_earned: "Revenus totaux",
+    this_month: "Ce mois-ci",
+    completed_trips: "Trajets effectués",
+    avg_per_trip: "Moyenne par trajet",
+    earnings_history: "Historique des revenus",
+    no_earnings: "Aucun revenu pour l'instant",
+
+    // Admin
+    admin_dashboard: "Tableau de bord admin",
+    admin_users: "Utilisateurs",
+    admin_orders: "Commandes",
+    admin_stats: "Statistiques",
+    total_users: "Total utilisateurs",
+    total_requests: "Total demandes",
+    total_revenue: "Revenus estimés",
+    new_this_week: "Nouveau cette semaine",
+    ban_user: "Bannir",
+    unban_user: "Réactiver",
+    user_banned: "Banni",
+    user_active: "Actif",
+    all_roles: "Tous",
+    search_users: "Rechercher...",
+    filter_status: "Filtrer",
 
     // Orders (transporter view)
     my_orders: "Mes commandes acceptées",
