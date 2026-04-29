@@ -25,7 +25,7 @@ export default function NewRequestPage() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     fromCity: "", toCity: "", fromAddress: "", toAddress: "",
-    goodsType: "", weight: "", description: "",
+    goodsType: "", vehicleType: "any", weight: "", description: "",
   });
 
   const goodsTypes = [
@@ -35,6 +35,19 @@ export default function NewRequestPage() {
     { value: "food", label: tr("goods_food") },
     { value: "building_material", label: tr("goods_building") },
     { value: "other", label: tr("goods_other") },
+  ];
+
+  const vehicleTypes = [
+    { value: "any",         label: tr("vt_any"),         icon: "🚗" },
+    { value: "pickup",      label: tr("vt_pickup"),      icon: "🛻" },
+    { value: "van",         label: tr("vt_van"),         icon: "🚐" },
+    { value: "light_truck", label: tr("vt_light_truck"), icon: "🚛" },
+    { value: "heavy_truck", label: tr("vt_heavy_truck"), icon: "🚚" },
+    { value: "refrigerated",label: tr("vt_refrigerated"),icon: "🧊" },
+    { value: "flatbed",     label: tr("vt_flatbed"),     icon: "🏗️" },
+    { value: "offroad",     label: tr("vt_offroad"),     icon: "🚙" },
+    { value: "crane",       label: tr("vt_crane"),       icon: "🏗️" },
+    { value: "taxi",        label: tr("vt_taxi"),        icon: "🚕" },
   ];
 
   function set(key: string, value: string) {
@@ -103,6 +116,25 @@ export default function NewRequestPage() {
                 <input value={form.toAddress} onChange={e => set("toAddress", e.target.value)}
                   placeholder={tr("address_placeholder")} className={inputClass} required />
               </div>
+            </div>
+          </div>
+
+          {/* Vehicle type section */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
+            <h2 className="font-bold text-gray-900 mb-4 text-sm md:text-base">{tr("vehicle_section")}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
+              {vehicleTypes.map(v => (
+                <button key={v.value} type="button" onClick={() => set("vehicleType", v.value)}
+                  className={`p-2.5 md:p-3 rounded-xl border-2 text-xs md:text-sm text-center transition-all font-medium flex flex-col items-center gap-1 ${
+                    form.vehicleType === v.value
+                      ? "border-orange-500 bg-orange-50 text-orange-700"
+                      : "border-gray-200 hover:border-gray-300 text-gray-600"
+                  }`}
+                >
+                  <span className="text-lg leading-none">{v.icon}</span>
+                  <span>{v.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 

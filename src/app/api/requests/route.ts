@@ -49,13 +49,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { fromCity, toCity, fromAddress, toAddress, goodsType, weight, description } = body;
+    const { fromCity, toCity, fromAddress, toAddress, goodsType, vehicleType, weight, description } = body;
 
     const request = await prisma.transportRequest.create({
       data: {
         clientId: session.user.id,
         fromCity, toCity, fromAddress, toAddress,
         goodsType,
+        vehicleType: vehicleType || "any",
         weight: parseFloat(weight),
         description: description || null,
       },

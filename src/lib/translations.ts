@@ -150,6 +150,40 @@ export const t = {
     accepted_bids: "عروض مقبولة",
     no_available_now: "لا توجد طلبات متاحة حالياً",
 
+    // Vehicle types
+    vehicle_section: "نوع المركبة المطلوبة",
+    vehicle_type: "نوع المركبة المطلوبة",
+    vt_any: "أي نوع",
+    vt_pickup: "بيك آب",
+    vt_van: "فان",
+    vt_light_truck: "شاحنة خفيفة",
+    vt_heavy_truck: "شاحنة ثقيلة",
+    vt_refrigerated: "مبردة",
+    vt_flatbed: "مسطح",
+    vt_offroad: "دفع رباعي",
+    vt_crane: "رافعة",
+    vt_taxi: "سيارة أجرة",
+
+    // Orders (transporter view)
+    my_orders: "طلباتي المقبولة",
+    no_orders: "لا توجد طلبات مقبولة بعد",
+    start_trip: "بدأت الرحلة",
+    mark_delivered: "تم التسليم",
+    call_client: "اتصل بالعميل",
+    call_transporter: "اتصل بالناقل",
+    order_in_transit: "في الطريق",
+    order_delivered: "مكتمل",
+    agreed_price: "السعر المتفق عليه",
+
+    // Notifications
+    notifications: "الإشعارات",
+    no_notifications: "لا توجد إشعارات",
+    mark_all_read: "تعيين الكل كمقروء",
+    notif_new_bid: "عرض جديد على طلبك",
+    notif_bid_accepted: "تم قبول عرضك!",
+    notif_in_transit: "الناقل في الطريق",
+    notif_delivered: "تم تسليم بضاعتك",
+
     // Landing – steps
     step1_title: "انشر طلبك",
     step1_desc: "حدد نوع البضاعة، الوزن، نقطة الانطلاق والوجهة في أقل من دقيقة",
@@ -339,6 +373,40 @@ export const t = {
     my_bids: "Mes offres soumises",
     accepted_bids: "Offres acceptées",
     no_available_now: "Aucune demande disponible pour l'instant",
+
+    // Vehicle types
+    vehicle_section: "Type de véhicule requis",
+    vehicle_type: "Type de véhicule requis",
+    vt_any: "Tout type",
+    vt_pickup: "Pick-up",
+    vt_van: "Fourgonnette",
+    vt_light_truck: "Camion léger",
+    vt_heavy_truck: "Camion lourd",
+    vt_refrigerated: "Réfrigéré",
+    vt_flatbed: "Plateau",
+    vt_offroad: "4×4",
+    vt_crane: "Grue",
+    vt_taxi: "Taxi / Berline",
+
+    // Orders (transporter view)
+    my_orders: "Mes commandes acceptées",
+    no_orders: "Aucune commande acceptée pour l'instant",
+    start_trip: "Démarrer le trajet",
+    mark_delivered: "Marquer livré",
+    call_client: "Appeler le client",
+    call_transporter: "Appeler le transporteur",
+    order_in_transit: "En route",
+    order_delivered: "Terminé",
+    agreed_price: "Prix convenu",
+
+    // Notifications
+    notifications: "Notifications",
+    no_notifications: "Aucune notification",
+    mark_all_read: "Tout marquer comme lu",
+    notif_new_bid: "Nouvelle offre sur votre demande",
+    notif_bid_accepted: "Votre offre a été acceptée !",
+    notif_in_transit: "Le transporteur est en route",
+    notif_delivered: "Votre marchandise a été livrée",
 
     // Landing – steps
     step1_title: "Publiez votre demande",

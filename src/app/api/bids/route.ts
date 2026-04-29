@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
 
     const { requestId, price, estimatedTime, note } = await req.json();
 
-    const request = await prisma.transportRequest.findUnique({ where: { id: requestId } });
+    const request = await prisma.transportRequest.findUnique({
+      where: { id: requestId },
+      include: { client: { select: { id: true } } },
+    });
     if (!request || request.status !== "OPEN") {
       return NextResponse.json({ error: "الطلب غير متاح" }, { status: 400 });
     }
@@ -26,6 +29,18 @@ export async function POST(req: NextRequest) {
         price: parseFloat(price),
         estimatedTime,
         note: note || null,
+      },
+      include: { transporter: { select: { name: true } } },
+    });
+
+    // Notify the client that they received a new bid
+    await prisma.notification.create({
+      data: {
+        userId: request.client.id,
+        title: "💰 عرض جديد على طلبك",
+        body: `${request.fromCity} ← ${request.toCity} — ${parseFloat(price).toLocaleString()} دج من ${bid.transporter.name}`,
+        type: "new_bid",
+        requestId,
       },
     });
 

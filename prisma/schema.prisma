@@ -15,9 +15,10 @@ model User {
   role      String   // CLIENT | TRANSPORTER
   createdAt DateTime @default(now())
 
-  requests  TransportRequest[] @relation("ClientRequests")
-  bids      Bid[]
-  vehicles  Vehicle[]
+  requests      TransportRequest[] @relation("ClientRequests")
+  bids          Bid[]
+  vehicles      Vehicle[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -46,6 +47,7 @@ model TransportRequest {
   toAddress     String
 
   goodsType     String
+  vehicleType   String   @default("any")
   weight        Float
   description   String?
 
@@ -80,4 +82,18 @@ model Bid {
 
   @@unique([requestId, transporterId])
   @@map("bids")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  type      String   // new_bid | bid_accepted | in_transit | delivered
+  read      Boolean  @default(false)
+  requestId String?
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
 }

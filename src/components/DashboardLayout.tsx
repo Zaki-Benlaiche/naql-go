@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Truck, LogOut, LayoutDashboard, PlusCircle, List, Globe, Menu, X } from "lucide-react";
+import { Truck, LogOut, LayoutDashboard, PlusCircle, List, Globe, Menu, X, Bell, Package } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -12,16 +12,35 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const isClient = session?.user?.role === "CLIENT";
   const { lang, setLang, tr } = useLanguage();
   const [open, setOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchUnread() {
+      try {
+        const res = await fetch("/api/notifications?unread=true");
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count ?? 0);
+        }
+      } catch {}
+    }
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const links = isClient
     ? [
         { href: "/client", label: tr("dashboard"), icon: LayoutDashboard },
         { href: "/client/new-request", label: tr("new_request"), icon: PlusCircle },
         { href: "/client/requests", label: tr("my_requests"), icon: List },
+        { href: "/notifications", label: tr("notifications"), icon: Bell },
       ]
     : [
         { href: "/transporter", label: tr("dashboard"), icon: LayoutDashboard },
         { href: "/transporter/browse", label: tr("browse_requests"), icon: List },
+        { href: "/transporter/orders", label: tr("my_orders"), icon: Package },
+        { href: "/notifications", label: tr("notifications"), icon: Bell },
       ];
 
   const initial = session?.user?.name?.[0]?.toUpperCase() ?? "U";
@@ -89,18 +108,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </p>
           {links.map((link) => {
             const active = pathname === link.href;
+            const isNotif = link.href === "/notifications";
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); if (isNotif) setUnreadCount(0); }}
                 className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${
                   active
                     ? "bg-orange-500 text-white shadow-sm"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
-                <link.icon className="w-4 h-4 shrink-0" />
+                <span className="relative shrink-0">
+                  <link.icon className="w-4 h-4" />
+                  {isNotif && unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -end-1.5 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </span>
                 {link.label}
               </Link>
             );
@@ -138,6 +165,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-gray-900 text-sm">NaqlGo</span>
           </Link>
           <div className="flex items-center gap-2">
+            <Link
+              href="/notifications"
+              onClick={() => setUnreadCount(0)}
+              className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 end-1.5 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
             <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-xs shadow-sm">
               {initial}
             </div>

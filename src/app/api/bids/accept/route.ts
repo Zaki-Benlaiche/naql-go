@@ -13,47 +13,51 @@ export async function POST(req: NextRequest) {
     }
 
     const { bidId, requestId } = await req.json();
-
     if (!bidId || !requestId) {
       return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
     }
 
-    // Verify request belongs to this client and is still OPEN
     const request = await prisma.transportRequest.findUnique({
       where: { id: requestId },
+      include: { client: { select: { name: true } } },
     });
 
-    if (!request) {
-      return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
-    }
-    if (request.clientId !== session.user.id) {
-      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
-    }
-    if (request.status !== "OPEN") {
-      return NextResponse.json({ error: "الطلب مغلق بالفعل" }, { status: 400 });
-    }
+    if (!request) return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
+    if (request.clientId !== session.user.id) return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    if (request.status !== "OPEN") return NextResponse.json({ error: "الطلب مغلق بالفعل" }, { status: 400 });
 
-    // Verify bid exists and belongs to this request
-    const bid = await prisma.bid.findUnique({ where: { id: bidId } });
+    const bid = await prisma.bid.findUnique({
+      where: { id: bidId },
+      include: { transporter: { select: { id: true, name: true } } },
+    });
     if (!bid || bid.requestId !== requestId) {
       return NextResponse.json({ error: "العرض غير موجود" }, { status: 404 });
     }
 
-    // Run sequentially (Neon HTTP adapter compatible)
-    await prisma.bid.update({
-      where: { id: bidId },
-      data: { status: "ACCEPTED" },
-    });
+    // Update bid → ACCEPTED
+    await prisma.bid.update({ where: { id: bidId }, data: { status: "ACCEPTED" } });
 
+    // Update request → ACCEPTED + acceptedBidId
     await prisma.transportRequest.update({
       where: { id: requestId },
       data: { status: "ACCEPTED", acceptedBidId: bidId },
     });
 
-    // Reject remaining bids
+    // Reject other bids
     await prisma.bid.updateMany({
       where: { requestId, id: { not: bidId } },
       data: { status: "REJECTED" },
+    });
+
+    // Notify the transporter whose bid was accepted
+    await prisma.notification.create({
+      data: {
+        userId: bid.transporter.id,
+        title: "🎉 تم قبول عرضك!",
+        body: `${request.fromCity} ← ${request.toCity} — ${bid.price.toLocaleString()} دج`,
+        type: "bid_accepted",
+        requestId,
+      },
     });
 
     return NextResponse.json({ success: true });
