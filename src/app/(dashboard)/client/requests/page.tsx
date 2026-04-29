@@ -1,10 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle, Star, XCircle, Trash2 } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
-import { GpsTrackButton } from "@/components/GpsShare";
 import { useLanguage } from "@/context/LanguageContext";
+
+// Dynamically import LiveMap (Leaflet requires browser APIs — no SSR)
+const LiveMap = dynamic(() => import("@/components/LiveMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-44 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-center">
+      <span className="w-5 h-5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+    </div>
+  ),
+});
 
 type Bid = {
   id: string; price: number; estimatedTime: string;
@@ -18,6 +28,8 @@ type Request = {
   description: string | null; status: string;
   createdAt: string; bids: Bid[];
   rating: { score: number } | null;
+  fromLat: number | null; fromLng: number | null;
+  toLat: number | null;   toLng: number | null;
 };
 
 const statusColors: Record<string, string> = {
@@ -271,11 +283,27 @@ export default function RequestsPage() {
                       )}
                     </div>
 
-                    {/* Chat + GPS — for accepted/in-transit orders */}
+                    {/* Chat — for accepted/in-transit orders */}
                     {(req.status === "ACCEPTED" || req.status === "IN_TRANSIT") && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
+                      <div className="mb-4">
                         <ChatPanel requestId={req.id} myRole="CLIENT" />
-                        {req.status === "IN_TRANSIT" && <GpsTrackButton requestId={req.id} />}
+                      </div>
+                    )}
+
+                    {/* Live map — only when transporter is in transit */}
+                    {req.status === "IN_TRANSIT" && (
+                      <div className="mb-5">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                          <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+                          {lang === "ar" ? "تتبع الناقل على الخريطة" : "Suivre le transporteur sur la carte"}
+                        </p>
+                        <LiveMap
+                          requestId={req.id}
+                          fromLat={req.fromLat}
+                          fromLng={req.fromLng}
+                          toLat={req.toLat}
+                          toLng={req.toLng}
+                        />
                       </div>
                     )}
 

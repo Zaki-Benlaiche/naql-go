@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-// Transporter updates their GPS location
+// Transporter updates their GPS location (INTER bid-based OR INTRA direct)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -23,12 +23,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id },
       include: { bids: { where: { transporterId: session.user.id, status: "ACCEPTED" } } },
     });
-    if (!request || request.bids.length === 0) {
+
+    if (!request) return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
+
+    const hasBid    = request.bids.length > 0;
+    const isDirect  = request.assignedTransporterId === session.user.id;
+
+    if (!hasBid && !isDirect) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
     await prisma.locationTrack.upsert({
-      where: { requestId: id },
+      where:  { requestId: id },
       create: { requestId: id, lat, lng },
       update: { lat, lng },
     });
@@ -40,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 }
 
-// Client fetches transporter location
+// Client (or assigned transporter) reads current location
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -48,7 +54,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
     const request = await prisma.transportRequest.findUnique({ where: { id } });
-    if (!request || request.clientId !== session.user.id) {
+    if (!request) return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
+
+    const isClient      = request.clientId === session.user.id;
+    const isAssigned    = request.assignedTransporterId === session.user.id;
+
+    if (!isClient && !isAssigned) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
