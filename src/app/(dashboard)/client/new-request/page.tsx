@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -19,18 +19,13 @@ const wilayas = [
 
 export default function NewRequestPage() {
   const router = useRouter();
-  const { tr } = useLanguage();
+  const { lang, tr } = useLanguage();
+  const BackIcon = lang === "ar" ? ArrowRight : ArrowLeft;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const [form, setForm] = useState({
-    fromCity: "",
-    toCity: "",
-    fromAddress: "",
-    toAddress: "",
-    goodsType: "",
-    weight: "",
-    description: "",
+    fromCity: "", toCity: "", fromAddress: "", toAddress: "",
+    goodsType: "", weight: "", description: "",
   });
 
   const goodsTypes = [
@@ -43,144 +38,111 @@ export default function NewRequestPage() {
   ];
 
   function set(key: string, value: string) {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm(prev => ({ ...prev, [key]: value }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-
+    setLoading(true); setError("");
     const res = await fetch("/api/requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-
     const data = await res.json();
     setLoading(false);
-
     if (!res.ok) { setError(data.error || tr("error_occurred")); return; }
     router.push("/client/requests");
   }
 
+  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent bg-white transition";
+  const labelClass = "block text-sm font-medium text-gray-700 mb-1.5";
+
   return (
     <DashboardLayout>
-      <div className="max-w-2xl">
-        <div className="flex items-center gap-3 mb-8">
-          <Link href="/client" className="text-gray-400 hover:text-gray-600">
-            <ArrowRight className="w-5 h-5" />
+      <div className="max-w-2xl mx-auto">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <Link href="/client" className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+            <BackIcon className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{tr("new_request_title")}</h1>
-            <p className="text-gray-500 text-sm">{tr("new_request_sub")}</p>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">{tr("new_request_title")}</h1>
+            <p className="text-gray-500 text-xs md:text-sm mt-0.5">{tr("new_request_sub")}</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Route */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <h2 className="font-bold text-gray-900 mb-4">{tr("route_section")}</h2>
-            <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Route section */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
+            <h2 className="font-bold text-gray-900 mb-4 text-sm md:text-base">{tr("route_section")}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr("from_city")}</label>
-                <select
-                  value={form.fromCity}
-                  onChange={(e) => set("fromCity", e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
-                  required
-                >
+                <label className={labelClass}>{tr("from_city")}</label>
+                <select value={form.fromCity} onChange={e => set("fromCity", e.target.value)} className={inputClass} required>
                   <option value="">{tr("select_wilaya")}</option>
-                  {wilayas.map((w) => <option key={w} value={w}>{w}</option>)}
+                  {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr("to_city")}</label>
-                <select
-                  value={form.toCity}
-                  onChange={(e) => set("toCity", e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
-                  required
-                >
+                <label className={labelClass}>{tr("to_city")}</label>
+                <select value={form.toCity} onChange={e => set("toCity", e.target.value)} className={inputClass} required>
                   <option value="">{tr("select_wilaya")}</option>
-                  {wilayas.map((w) => <option key={w} value={w}>{w}</option>)}
+                  {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr("from_address")}</label>
-                <input
-                  value={form.fromAddress}
-                  onChange={(e) => set("fromAddress", e.target.value)}
-                  placeholder={tr("address_placeholder")}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                  required
-                />
+                <label className={labelClass}>{tr("from_address")}</label>
+                <input value={form.fromAddress} onChange={e => set("fromAddress", e.target.value)}
+                  placeholder={tr("address_placeholder")} className={inputClass} required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr("to_address")}</label>
-                <input
-                  value={form.toAddress}
-                  onChange={(e) => set("toAddress", e.target.value)}
-                  placeholder={tr("address_placeholder")}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                  required
-                />
+                <label className={labelClass}>{tr("to_address")}</label>
+                <input value={form.toAddress} onChange={e => set("toAddress", e.target.value)}
+                  placeholder={tr("address_placeholder")} className={inputClass} required />
               </div>
             </div>
           </div>
 
-          {/* Goods */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <h2 className="font-bold text-gray-900 mb-4">{tr("goods_section")}</h2>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {goodsTypes.map((g) => (
-                <button
-                  key={g.value}
-                  type="button"
-                  onClick={() => set("goodsType", g.value)}
-                  className={`p-3 rounded-xl border-2 text-sm text-center transition-all ${
+          {/* Goods section */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
+            <h2 className="font-bold text-gray-900 mb-4 text-sm md:text-base">{tr("goods_section")}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 mb-4">
+              {goodsTypes.map(g => (
+                <button key={g.value} type="button" onClick={() => set("goodsType", g.value)}
+                  className={`p-2.5 md:p-3 rounded-xl border-2 text-xs md:text-sm text-center transition-all font-medium ${
                     form.goodsType === g.value
-                      ? "border-orange-500 bg-orange-50"
-                      : "border-gray-200 hover:border-gray-300"
+                      ? "border-orange-500 bg-orange-50 text-orange-700"
+                      : "border-gray-200 hover:border-gray-300 text-gray-600"
                   }`}
                 >
                   {g.label}
                 </button>
               ))}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{tr("weight_label")}</label>
-              <input
-                type="number"
-                value={form.weight}
-                onChange={(e) => set("weight", e.target.value)}
-                placeholder={tr("weight_placeholder")}
-                min="1"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                required
-              />
+            <div className="mb-4">
+              <label className={labelClass}>{tr("weight_label")}</label>
+              <input type="number" value={form.weight} onChange={e => set("weight", e.target.value)}
+                placeholder={tr("weight_placeholder")} min="1" className={inputClass} required />
             </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div>
+              <label className={labelClass}>
                 {tr("description_label")} <span className="text-gray-400 font-normal">{tr("description_optional")}</span>
               </label>
-              <textarea
-                value={form.description}
-                onChange={(e) => set("description", e.target.value)}
-                placeholder={tr("description_placeholder")}
-                rows={3}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"
-              />
+              <textarea value={form.description} onChange={e => set("description", e.target.value)}
+                placeholder={tr("description_placeholder")} rows={3}
+                className={`${inputClass} resize-none`} />
             </div>
           </div>
 
-          {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
+          {error && (
+            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">{error}</div>
+          )}
 
-          <button
-            type="submit"
-            disabled={loading || !form.goodsType}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-4 rounded-2xl transition-colors"
-          >
+          <button type="submit" disabled={loading || !form.goodsType}
+            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-3.5 rounded-2xl transition-colors shadow-sm text-sm md:text-base">
             {loading ? tr("publishing") : tr("publish_btn")}
           </button>
         </form>

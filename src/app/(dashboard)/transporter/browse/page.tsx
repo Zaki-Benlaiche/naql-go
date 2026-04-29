@@ -5,27 +5,19 @@ import { Package, X, RefreshCw } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 type Request = {
-  id: string;
-  fromCity: string;
-  toCity: string;
-  fromAddress: string;
-  toAddress: string;
-  goodsType: string;
-  weight: number;
-  description: string | null;
-  status: string;
+  id: string; fromCity: string; toCity: string;
+  fromAddress: string; toAddress: string;
+  goodsType: string; weight: number;
+  description: string | null; status: string;
   createdAt: string;
   client: { name: string; phone: string };
   bids: { id: string; price: number; status: string }[];
 };
 
 const goodsKeyMap: Record<string, string> = {
-  furniture: "goods_furniture",
-  electronics: "goods_electronics",
-  food: "goods_food",
-  building_material: "goods_building",
-  packages: "goods_packages",
-  other: "goods_other",
+  furniture: "goods_furniture", electronics: "goods_electronics",
+  food: "goods_food", building_material: "goods_building",
+  packages: "goods_packages", other: "goods_other",
 };
 
 const AUTO_REFRESH = 30;
@@ -52,24 +44,17 @@ export default function BrowsePage() {
       setRequests(Array.isArray(data) ? data : []);
       setLastUpdated(new Date());
       setCountdown(AUTO_REFRESH);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    } finally { setLoading(false); setRefreshing(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
   useEffect(() => {
-    const interval = setInterval(() => load(true), AUTO_REFRESH * 1000);
-    return () => clearInterval(interval);
+    const i = setInterval(() => load(true), AUTO_REFRESH * 1000);
+    return () => clearInterval(i);
   }, [load]);
-
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((c) => (c <= 1 ? AUTO_REFRESH : c - 1));
-    }, 1000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setCountdown(c => c <= 1 ? AUTO_REFRESH : c - 1), 1000);
+    return () => clearInterval(t);
   }, []);
 
   async function submitBid() {
@@ -83,8 +68,7 @@ export default function BrowsePage() {
     setSubmitting(false);
     if (res.ok) {
       setSuccess(tr("bid_success"));
-      setBidModal(null);
-      setPrice(""); setEstimatedTime(""); setNote("");
+      setBidModal(null); setPrice(""); setEstimatedTime(""); setNote("");
       load();
       setTimeout(() => setSuccess(""), 3000);
     }
@@ -96,99 +80,96 @@ export default function BrowsePage() {
   };
 
   const timeOptions = [
-    { value: tr("time_less_day"), label: tr("time_less_day") },
-    { value: tr("time_one_day"), label: tr("time_one_day") },
-    { value: tr("time_two_days"), label: tr("time_two_days") },
-    { value: tr("time_three_days"), label: tr("time_three_days") },
-    { value: tr("time_more"), label: tr("time_more") },
+    tr("time_less_day"), tr("time_one_day"), tr("time_two_days"),
+    tr("time_three_days"), tr("time_more"),
   ];
+
+  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent bg-white transition";
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl">
+      <div className="max-w-3xl mx-auto">
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{tr("browse_title")}</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">{tr("browse_title")}</h1>
             {lastUpdated && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-400 mt-0.5">
                 {tr("last_updated")} {lastUpdated.toLocaleTimeString()}
               </p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-gray-100 text-gray-500 text-xs px-3 py-1.5 rounded-full">
               <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
               {tr("auto_refresh")} {countdown}s
             </div>
-            <button
-              onClick={() => load()}
-              disabled={refreshing}
-              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            <button onClick={() => load()} disabled={refreshing}
+              className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors">
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
               {tr("refresh_btn")}
             </button>
           </div>
         </div>
 
-        <p className="text-gray-500 text-sm mb-6">{tr("browse_sub")}</p>
+        <p className="text-gray-500 text-sm mb-5">{tr("browse_sub")}</p>
 
         {success && (
-          <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-xl mb-4">
+          <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-xl mb-4 border border-green-100">
             {success}
           </div>
         )}
 
         {loading ? (
-          <div className="text-center py-12 text-gray-400">{tr("loading")}</div>
+          <div className="text-center py-12 text-gray-400 text-sm">{tr("loading")}</div>
         ) : requests.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
-            <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">{tr("no_available")}</p>
-            <p className="text-gray-400 text-sm mt-1">{tr("auto_refresh_note")}</p>
+          <div className="text-center py-14 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Package className="w-7 h-7 text-gray-300" />
+            </div>
+            <p className="text-gray-500 font-medium text-sm">{tr("no_available")}</p>
+            <p className="text-gray-400 text-xs mt-1">{tr("auto_refresh_note")}</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {requests.map((req) => {
               const alreadyBid = req.bids.length > 0;
               return (
-                <div key={req.id} className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
-                        <Package className="w-6 h-6 text-orange-400" />
+                <div key={req.id} className="bg-white rounded-2xl border border-gray-100 p-4 md:p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
+                        <Package className="w-5 h-5 text-orange-400" />
                       </div>
-                      <div>
-                        <div className="font-bold text-gray-900 text-lg">
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-900 text-sm md:text-base truncate">
                           {req.fromCity} ← {req.toCity}
-                        </div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          {goodsLabel(req.goodsType)} • {req.weight} {tr("kg_suffix")}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          {req.fromAddress}، {req.fromCity} ← {req.toAddress}، {req.toCity}
-                        </div>
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {goodsLabel(req.goodsType)} · {req.weight} {tr("kg_suffix")}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">
+                          {req.fromAddress} ← {req.toAddress}
+                        </p>
                         {req.description && (
-                          <div className="text-xs text-gray-500 mt-2 bg-gray-50 rounded-lg px-3 py-2">
+                          <p className="text-xs text-gray-500 mt-1.5 bg-gray-50 rounded-lg px-2.5 py-1.5 line-clamp-2">
                             {req.description}
-                          </div>
+                          </p>
                         )}
-                        <div className="text-xs text-gray-400 mt-2">
+                        <p className="text-xs text-gray-400 mt-1.5">
                           {tr("client_label2")} {req.client.name}
-                        </div>
+                        </p>
                       </div>
                     </div>
                     <div className="shrink-0">
                       {alreadyBid ? (
-                        <span className="bg-green-100 text-green-700 text-xs font-medium px-3 py-2 rounded-xl block text-center">
+                        <span className="bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1.5 rounded-xl block text-center whitespace-nowrap">
                           {tr("already_bid")}
                         </span>
                       ) : (
-                        <button
-                          onClick={() => setBidModal(req)}
-                          className="bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors"
-                        >
+                        <button onClick={() => setBidModal(req)}
+                          className="bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs md:text-sm px-3 md:px-5 py-2 md:py-2.5 rounded-xl transition-colors whitespace-nowrap">
                           {tr("submit_bid_btn")}
                         </button>
                       )}
@@ -203,72 +184,55 @@ export default function BrowsePage() {
 
       {/* Bid Modal */}
       {bidModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-bold text-gray-900 text-lg">{tr("bid_title")}</h2>
-              <button onClick={() => setBidModal(null)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setBidModal(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="bg-orange-50 rounded-xl p-4 mb-5 text-sm">
-              <div className="font-semibold text-gray-900">{bidModal.fromCity} ← {bidModal.toCity}</div>
-              <div className="text-gray-500 mt-1">
-                {bidModal.weight} {tr("kg_suffix")} • {goodsLabel(bidModal.goodsType)}
-              </div>
+            {/* Drag handle for mobile sheet */}
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-200 rounded-full sm:hidden" />
+
+            <div className="bg-orange-50 rounded-xl p-4 mb-5 border border-orange-100">
+              <p className="font-semibold text-gray-900 text-sm">{bidModal.fromCity} ← {bidModal.toCity}</p>
+              <p className="text-gray-500 text-xs mt-0.5">
+                {bidModal.weight} {tr("kg_suffix")} · {goodsLabel(bidModal.goodsType)}
+              </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr("price_label")}</label>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder={tr("price_placeholder")}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{tr("price_label")}</label>
+                <input type="number" value={price} onChange={e => setPrice(e.target.value)}
+                  placeholder={tr("price_placeholder")} className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr("time_label")}</label>
-                <select
-                  value={estimatedTime}
-                  onChange={(e) => setEstimatedTime(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{tr("time_label")}</label>
+                <select value={estimatedTime} onChange={e => setEstimatedTime(e.target.value)} className={inputClass}>
                   <option value="">{tr("select_time")}</option>
-                  {timeOptions.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                  {timeOptions.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {tr("note_optional")} <span className="text-gray-400 font-normal">({tr("email_optional")})</span>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {tr("note_optional")} <span className="text-gray-400 font-normal">{tr("email_optional")}</span>
                 </label>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder={tr("notes_placeholder")}
-                  rows={2}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"
-                />
+                <textarea value={note} onChange={e => setNote(e.target.value)}
+                  placeholder={tr("notes_placeholder")} rows={2}
+                  className={`${inputClass} resize-none`} />
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setBidModal(null)}
-                className="flex-1 border border-gray-200 text-gray-600 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
-              >
+              <button onClick={() => setBidModal(null)}
+                className="flex-1 border border-gray-200 text-gray-600 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm">
                 {tr("cancel_btn")}
               </button>
-              <button
-                onClick={submitBid}
-                disabled={submitting || !price || !estimatedTime}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-3 rounded-xl transition-colors"
-              >
+              <button onClick={submitBid} disabled={submitting || !price || !estimatedTime}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-3 rounded-xl transition-colors text-sm shadow-sm">
                 {submitting ? tr("sending") : tr("send_bid")}
               </button>
             </div>
