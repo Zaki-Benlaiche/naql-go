@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
@@ -18,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: { isActive },
       select: { id: true, name: true, isActive: true },
     });

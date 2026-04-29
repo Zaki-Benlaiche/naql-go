@@ -5,14 +5,14 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
-    // Verify user is party to this request
     const request = await prisma.transportRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { bids: { where: { status: "ACCEPTED" } } },
     });
     if (!request) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     if (!isClient && !isTransporter) return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
 
     const messages = await prisma.message.findMany({
-      where: { requestId: params.id },
+      where: { requestId: id },
       orderBy: { createdAt: "asc" },
       take: 100,
     });
@@ -34,8 +34,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (text.length > 1000) return NextResponse.json({ error: "الرسالة طويلة جداً" }, { status: 400 });
 
     const request = await prisma.transportRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { bids: { where: { status: "ACCEPTED" } } },
     });
     if (!request) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const message = await prisma.message.create({
       data: {
-        requestId: params.id,
+        requestId: id,
         senderId: session.user.id,
         senderName: session.user.name ?? "",
         senderRole: session.user.role,

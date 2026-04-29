@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "TRANSPORTER") {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     const request = await prisma.transportRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { bids: { where: { transporterId: session.user.id, status: "ACCEPTED" } } },
     });
 
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     await prisma.transportRequest.update({
-      where: { id: params.id },
+      where: { id },
       data: { status },
     });
 

@@ -6,8 +6,9 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 // Transporter updates their GPS location
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "TRANSPORTER") {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
@@ -19,7 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const request = await prisma.transportRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { bids: { where: { transporterId: session.user.id, status: "ACCEPTED" } } },
     });
     if (!request || request.bids.length === 0) {
@@ -27,8 +28,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     await prisma.locationTrack.upsert({
-      where: { requestId: params.id },
-      create: { requestId: params.id, lat, lng },
+      where: { requestId: id },
+      create: { requestId: id, lat, lng },
       update: { lat, lng },
     });
 
@@ -40,17 +41,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // Client fetches transporter location
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
-    const request = await prisma.transportRequest.findUnique({ where: { id: params.id } });
+    const request = await prisma.transportRequest.findUnique({ where: { id } });
     if (!request || request.clientId !== session.user.id) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
-    const loc = await prisma.locationTrack.findUnique({ where: { requestId: params.id } });
+    const loc = await prisma.locationTrack.findUnique({ where: { requestId: id } });
     if (!loc) return NextResponse.json(null);
 
     return NextResponse.json({ lat: loc.lat, lng: loc.lng, updatedAt: loc.updatedAt });
