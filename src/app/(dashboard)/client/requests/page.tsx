@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Package, ChevronDown, ChevronUp, Phone } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 type Bid = {
@@ -18,22 +18,23 @@ type Request = {
 };
 
 const statusColors: Record<string, string> = {
-  OPEN: "bg-blue-100 text-blue-700",
-  ACCEPTED: "bg-green-100 text-green-700",
-  IN_TRANSIT: "bg-orange-100 text-orange-700",
+  OPEN:      "bg-blue-100 text-blue-700",
+  ACCEPTED:  "bg-green-100 text-green-700",
+  IN_TRANSIT:"bg-orange-100 text-orange-700",
   DELIVERED: "bg-gray-100 text-gray-600",
   CANCELLED: "bg-red-100 text-red-600",
 };
 
 export default function RequestsPage() {
-  const { tr } = useLanguage();
-  const [requests, setRequests] = useState<Request[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const { lang, tr } = useLanguage();
+  const [requests, setRequests]   = useState<Request[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [expanded, setExpanded]   = useState<string | null>(null);
   const [accepting, setAccepting] = useState<string | null>(null);
+  const [toast, setToast]         = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
   const statusDescLabel = (s: string) => {
-    if (s === "OPEN") return tr("status_open_waiting");
+    if (s === "OPEN")     return tr("status_open_waiting");
     if (s === "ACCEPTED") return tr("status_accepted_bid");
     return tr(`status_${s}` as Parameters<typeof tr>[0]);
   };
@@ -43,23 +44,56 @@ export default function RequestsPage() {
     setRequests(await res.json());
     setLoading(false);
   }
-
   useEffect(() => { load(); }, []);
+
+  function showToast(type: "success" | "error", msg: string) {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 4000);
+  }
 
   async function acceptBid(bidId: string, requestId: string) {
     setAccepting(bidId);
-    await fetch("/api/bids/accept", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bidId, requestId }),
-    });
-    setAccepting(null);
-    load();
+    try {
+      const res = await fetch("/api/bids/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bidId, requestId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast("error", data.error || tr("error_occurred"));
+      } else {
+        showToast("success", lang === "ar" ? "✅ تم قبول العرض بنجاح!" : "✅ Offre acceptée avec succès !");
+        await load();
+        // auto-expand so user sees the accepted bid
+        setExpanded(requestId);
+      }
+    } catch {
+      showToast("error", tr("error_occurred"));
+    } finally {
+      setAccepting(null);
+    }
   }
 
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
+
+        {/* Toast notification */}
+        {toast && (
+          <div className={`fixed top-4 start-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium min-w-[260px] max-w-sm ${
+            toast.type === "success"
+              ? "bg-green-500 text-white"
+              : "bg-red-500 text-white"
+          }`}>
+            {toast.type === "success"
+              ? <CheckCircle className="w-4 h-4 shrink-0" />
+              : <AlertCircle className="w-4 h-4 shrink-0" />
+            }
+            {toast.msg}
+          </div>
+        )}
+
         <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">{tr("requests_title")}</h1>
 
         {loading ? (
@@ -75,11 +109,10 @@ export default function RequestsPage() {
           <div className="space-y-3">
             {requests.map((req) => (
               <div key={req.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                {/* Request header row */}
-                <div
-                  className="px-4 md:px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => setExpanded(expanded === req.id ? null : req.id)}
-                >
+
+                {/* Request header */}
+                <div className="px-4 md:px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setExpanded(expanded === req.id ? null : req.id)}>
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
@@ -104,7 +137,6 @@ export default function RequestsPage() {
                       }
                     </div>
                   </div>
-                  {/* Status badge visible on mobile below */}
                   <div className="mt-2 sm:hidden">
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[req.status]}`}>
                       {statusDescLabel(req.status)}
@@ -112,26 +144,29 @@ export default function RequestsPage() {
                   </div>
                 </div>
 
-                {/* Expanded detail */}
+                {/* Expanded panel */}
                 {expanded === req.id && (
                   <div className="border-t border-gray-100 px-4 md:px-5 py-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-5">
+
+                    {/* Route details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm mb-5">
                       <div className="bg-gray-50 rounded-xl px-3 py-2.5">
                         <span className="text-gray-400 text-xs font-medium block mb-0.5">{tr("from_label")}</span>
-                        <span className="text-gray-900 font-medium">{req.fromAddress}، {req.fromCity}</span>
+                        <span className="text-gray-900 font-medium text-sm">{req.fromAddress}، {req.fromCity}</span>
                       </div>
                       <div className="bg-gray-50 rounded-xl px-3 py-2.5">
                         <span className="text-gray-400 text-xs font-medium block mb-0.5">{tr("to_label")}</span>
-                        <span className="text-gray-900 font-medium">{req.toAddress}، {req.toCity}</span>
+                        <span className="text-gray-900 font-medium text-sm">{req.toAddress}، {req.toCity}</span>
                       </div>
                       {req.description && (
                         <div className="sm:col-span-2 bg-gray-50 rounded-xl px-3 py-2.5">
                           <span className="text-gray-400 text-xs font-medium block mb-0.5">{tr("note_label")}</span>
-                          <span className="text-gray-700">{req.description}</span>
+                          <span className="text-gray-700 text-sm">{req.description}</span>
                         </div>
                       )}
                     </div>
 
+                    {/* Bids */}
                     {req.bids.length === 0 ? (
                       <div className="text-center py-5 text-gray-400 text-sm bg-gray-50 rounded-xl">
                         {tr("waiting_bids")}
@@ -142,47 +177,81 @@ export default function RequestsPage() {
                           {tr("bids_received")} ({req.bids.length})
                         </h3>
                         <div className="space-y-2.5">
-                          {req.bids.map((bid) => (
-                            <div key={bid.id}
-                              className={`rounded-xl p-3 md:p-4 border ${
-                                bid.status === "ACCEPTED"
+                          {req.bids.map((bid) => {
+                            const isAccepted = bid.status === "ACCEPTED";
+                            return (
+                              <div key={bid.id} className={`rounded-xl border transition-all ${
+                                isAccepted
                                   ? "border-green-200 bg-green-50"
                                   : "border-gray-100 bg-gray-50"
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-gray-900 text-sm">{bid.transporter.name}</p>
-                                  <p className="text-xs text-gray-500 mt-0.5">
-                                    {bid.estimatedTime} — {bid.note || tr("no_notes")}
-                                  </p>
-                                  <a href={`tel:${bid.transporter.phone}`}
-                                    className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-orange-500 mt-1 transition-colors">
-                                    <Phone className="w-3 h-3" />
-                                    {bid.transporter.phone}
-                                  </a>
-                                </div>
-                                <div className="text-end shrink-0">
-                                  <p className="text-lg font-bold text-orange-500">
-                                    {bid.price.toLocaleString()} {tr("dz_suffix")}
-                                  </p>
-                                  <div className="mt-1.5">
-                                    {req.status === "OPEN" && bid.status === "PENDING" && (
-                                      <button onClick={() => acceptBid(bid.id, req.id)} disabled={accepting === bid.id}
-                                        className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:bg-orange-300">
-                                        {accepting === bid.id ? "..." : tr("accept_btn")}
-                                      </button>
-                                    )}
-                                    {bid.status === "ACCEPTED" && (
-                                      <span className="bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg inline-block">
-                                        {tr("accepted_badge")}
-                                      </span>
-                                    )}
+                              }`}>
+                                {/* Accepted banner */}
+                                {isAccepted && (
+                                  <div className="flex items-center gap-2 px-4 py-2.5 bg-green-500 rounded-t-xl">
+                                    <CheckCircle className="w-4 h-4 text-white" />
+                                    <span className="text-white font-semibold text-sm">
+                                      {lang === "ar" ? "تم قبول هذا العرض" : "Offre acceptée"}
+                                    </span>
+                                  </div>
+                                )}
+
+                                <div className="p-3 md:p-4">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-semibold text-gray-900 text-sm">{bid.transporter.name}</p>
+                                      <p className="text-xs text-gray-500 mt-0.5">
+                                        {bid.estimatedTime}
+                                        {bid.note ? ` — ${bid.note}` : ""}
+                                      </p>
+
+                                      {/* Phone always visible for accepted bid */}
+                                      <a href={`tel:${bid.transporter.phone}`}
+                                        className={`inline-flex items-center gap-1.5 text-xs font-medium mt-2 px-3 py-1.5 rounded-lg transition-colors ${
+                                          isAccepted
+                                            ? "bg-green-500 text-white hover:bg-green-600"
+                                            : "text-gray-400 hover:text-orange-500"
+                                        }`}>
+                                        <Phone className="w-3 h-3" />
+                                        {bid.transporter.phone}
+                                      </a>
+                                    </div>
+
+                                    <div className="text-end shrink-0">
+                                      <p className="text-lg font-bold text-orange-500">
+                                        {bid.price.toLocaleString()} {tr("dz_suffix")}
+                                      </p>
+                                      <div className="mt-2">
+                                        {req.status === "OPEN" && bid.status === "PENDING" && (
+                                          <button
+                                            onClick={() => acceptBid(bid.id, req.id)}
+                                            disabled={accepting === bid.id}
+                                            className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:bg-orange-300 shadow-sm min-w-[80px]"
+                                          >
+                                            {accepting === bid.id
+                                              ? <span className="flex items-center justify-center gap-1.5">
+                                                  <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                </span>
+                                              : tr("accept_btn")
+                                            }
+                                          </button>
+                                        )}
+                                        {isAccepted && (
+                                          <span className="bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-xl inline-block">
+                                            {tr("accepted_badge")}
+                                          </span>
+                                        )}
+                                        {bid.status === "REJECTED" && (
+                                          <span className="text-gray-400 text-xs">
+                                            {lang === "ar" ? "مرفوض" : "Refusé"}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </>
                     )}
