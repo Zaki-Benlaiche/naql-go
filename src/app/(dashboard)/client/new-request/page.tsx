@@ -1,11 +1,14 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { ArrowRight, ArrowLeft, Calculator, Tag, CheckCircle, Clock } from "lucide-react";
+import { ArrowRight, ArrowLeft, Calculator, Tag, CheckCircle, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import { calcPrice } from "@/lib/pricing";
+import dynamic from "next/dynamic";
+
+const MapPicker = dynamic(() => import("@/components/MapPicker").then(m => ({ default: m.MapPicker })), { ssr: false, loading: () => <div className="h-48 bg-gray-100 rounded-xl animate-pulse" /> });
 
 const wilayas = [
   "أدرار","الشلف","الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار",
@@ -29,6 +32,10 @@ export default function NewRequestPage() {
     goodsType: "", vehicleType: "any", size: "medium", weight: "", description: "",
     scheduledDate: "", scheduledTime: "", isScheduled: false,
   });
+  const [fromCoords, setFromCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [toCoords, setToCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [showFromMap, setShowFromMap] = useState(false);
+  const [showToMap, setShowToMap] = useState(false);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState("");
@@ -109,6 +116,10 @@ export default function NewRequestPage() {
         estimatedPrice: basePrice,
         discountPercent: coupon?.discountPercent ?? null,
         finalPrice,
+        fromLat: fromCoords?.lat ?? null,
+        fromLng: fromCoords?.lng ?? null,
+        toLat: toCoords?.lat ?? null,
+        toLng: toCoords?.lng ?? null,
       }),
     });
     const data = await res.json();
@@ -159,11 +170,43 @@ export default function NewRequestPage() {
                 <label className={labelClass}>{tr("from_address")}</label>
                 <input value={form.fromAddress} onChange={e => set("fromAddress", e.target.value)}
                   placeholder={tr("address_placeholder")} className={inputClass} required />
+                <button type="button" onClick={() => setShowFromMap(s => !s)}
+                  className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 mt-1.5 font-medium transition-colors">
+                  <MapPin className="w-3.5 h-3.5" />
+                  {showFromMap ? tr("location_selected") : tr("pick_location")}
+                  {fromCoords && " ✓"}
+                </button>
+                {showFromMap && (
+                  <div className="mt-2">
+                    <MapPicker lat={fromCoords?.lat ?? null} lng={fromCoords?.lng ?? null}
+                      label={tr("pickup_location")}
+                      onChange={(lat, lng, label) => {
+                        setFromCoords({ lat, lng });
+                        if (!form.fromAddress) set("fromAddress", label);
+                      }} />
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>{tr("to_address")}</label>
                 <input value={form.toAddress} onChange={e => set("toAddress", e.target.value)}
                   placeholder={tr("address_placeholder")} className={inputClass} required />
+                <button type="button" onClick={() => setShowToMap(s => !s)}
+                  className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 mt-1.5 font-medium transition-colors">
+                  <MapPin className="w-3.5 h-3.5" />
+                  {showToMap ? tr("location_selected") : tr("pick_location")}
+                  {toCoords && " ✓"}
+                </button>
+                {showToMap && (
+                  <div className="mt-2">
+                    <MapPicker lat={toCoords?.lat ?? null} lng={toCoords?.lng ?? null}
+                      label={tr("delivery_location")}
+                      onChange={(lat, lng, label) => {
+                        setToCoords({ lat, lng });
+                        if (!form.toAddress) set("toAddress", label);
+                      }} />
+                  </div>
+                )}
               </div>
             </div>
           </div>

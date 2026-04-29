@@ -248,6 +248,40 @@ export const t = {
     order_delivered: "مكتمل",
     agreed_price: "السعر المتفق عليه",
 
+    // Chat
+    chat_title: "المحادثة",
+    chat_placeholder: "اكتب رسالة...",
+    chat_send: "إرسال",
+    chat_empty: "لا توجد رسائل بعد",
+    chat_open: "فتح المحادثة",
+
+    // GPS
+    share_location: "مشاركة موقعي",
+    location_shared: "✅ تم مشاركة موقعك",
+    track_transporter: "تتبع الناقل 📍",
+    location_unavailable: "الموقع غير متاح بعد",
+    gps_updating: "جارٍ تحديث الموقع...",
+
+    // Documents
+    my_documents: "وثائقي",
+    doc_license: "رخصة القيادة",
+    doc_vehicle_reg: "بطاقة التسجيل",
+    doc_insurance: "وثيقة التأمين",
+    doc_other: "وثيقة أخرى",
+    doc_pending: "في الانتظار",
+    doc_approved: "مُعتمد ✅",
+    doc_rejected: "مرفوض ❌",
+    doc_upload: "رفع الوثيقة",
+    doc_replace: "تحديث",
+    doc_uploaded_ok: "✅ تم رفع الوثيقة",
+    doc_hint: "صورة واضحة من الوثيقة الأصلية",
+
+    // Map
+    pick_location: "حدد الموقع على الخريطة",
+    pickup_location: "موقع الاستلام",
+    delivery_location: "موقع التسليم",
+    location_selected: "تم تحديد الموقع",
+
     // Notifications
     notifications: "الإشعارات",
     no_notifications: "لا توجد إشعارات",
@@ -544,6 +578,40 @@ export const t = {
     order_in_transit: "En route",
     order_delivered: "Terminé",
     agreed_price: "Prix convenu",
+
+    // Chat
+    chat_title: "Messagerie",
+    chat_placeholder: "Écrire un message...",
+    chat_send: "Envoyer",
+    chat_empty: "Aucun message pour l'instant",
+    chat_open: "Ouvrir la messagerie",
+
+    // GPS
+    share_location: "Partager ma position",
+    location_shared: "✅ Position partagée",
+    track_transporter: "Suivre le transporteur 📍",
+    location_unavailable: "Position non disponible",
+    gps_updating: "Mise à jour de la position...",
+
+    // Documents
+    my_documents: "Mes documents",
+    doc_license: "Permis de conduire",
+    doc_vehicle_reg: "Carte grise",
+    doc_insurance: "Assurance",
+    doc_other: "Autre document",
+    doc_pending: "En attente",
+    doc_approved: "Approuvé ✅",
+    doc_rejected: "Refusé ❌",
+    doc_upload: "Télécharger",
+    doc_replace: "Mettre à jour",
+    doc_uploaded_ok: "✅ Document téléchargé",
+    doc_hint: "Photo nette du document original",
+
+    // Map
+    pick_location: "Choisir sur la carte",
+    pickup_location: "Lieu de prise en charge",
+    delivery_location: "Lieu de livraison",
+    location_selected: "Position sélectionnée",
 
     // Notifications
     notifications: "Notifications",

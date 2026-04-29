@@ -26,6 +26,7 @@ model User {
   ratingsGiven    Rating[]           @relation("RatingClient")
   ratingsReceived Rating[]           @relation("RatingTransporter")
   couponUses      CouponUse[]
+  documents       Document[]
 
   @@map("users")
 }
@@ -71,6 +72,13 @@ model TransportRequest {
   acceptedBidId String?  @unique
   acceptedBid   Bid?     @relation("AcceptedBid", fields: [acceptedBidId], references: [id])
   rating        Rating?
+  messages      Message[]
+  locationTrack LocationTrack?
+
+  fromLat Float?
+  fromLng Float?
+  toLat   Float?
+  toLng   Float?
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -139,6 +147,41 @@ model CouponUse {
 
   @@unique([couponId, userId])
   @@map("coupon_uses")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  requestId  String
+  request    TransportRequest @relation(fields: [requestId], references: [id])
+  senderId   String
+  senderName String
+  senderRole String   // CLIENT | TRANSPORTER
+  text       String
+  createdAt  DateTime @default(now())
+
+  @@map("messages")
+}
+
+model LocationTrack {
+  requestId String   @id
+  request   TransportRequest @relation(fields: [requestId], references: [id])
+  lat       Float
+  lng       Float
+  updatedAt DateTime @updatedAt
+
+  @@map("location_tracks")
+}
+
+model Document {
+  id            String   @id @default(cuid())
+  transporterId String
+  transporter   User     @relation(fields: [transporterId], references: [id])
+  type          String   // license | vehicle_reg | insurance | other
+  fileData      String   // base64
+  status        String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  createdAt     DateTime @default(now())
+
+  @@map("documents")
 }
 
 model Notification {

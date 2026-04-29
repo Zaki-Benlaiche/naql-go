@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle, Star } from "lucide-react";
+import { ChatPanel } from "@/components/ChatPanel";
+import { GpsTrackButton } from "@/components/GpsShare";
 import { useLanguage } from "@/context/LanguageContext";
 
 type Bid = {
@@ -242,6 +244,14 @@ export default function RequestsPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Chat + GPS — for accepted/in-transit orders */}
+                    {(req.status === "ACCEPTED" || req.status === "IN_TRANSIT") && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
+                        <ChatPanel requestId={req.id} myRole="CLIENT" />
+                        {req.status === "IN_TRANSIT" && <GpsTrackButton requestId={req.id} />}
+                      </div>
+                    )}
 
                     {/* Bids */}
                     {req.bids.length === 0 ? (

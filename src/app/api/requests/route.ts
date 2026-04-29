@@ -53,7 +53,8 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { fromCity, toCity, fromAddress, toAddress, goodsType, vehicleType, size,
-            weight, description, estimatedPrice, scheduledAt, discountPercent, finalPrice } = body;
+            weight, description, estimatedPrice, scheduledAt, discountPercent, finalPrice,
+            fromLat, fromLng, toLat, toLng } = body;
 
     const request = await prisma.transportRequest.create({
       data: {
@@ -68,6 +69,10 @@ export async function POST(req: NextRequest) {
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         discountPercent: discountPercent ? parseInt(discountPercent) : null,
         finalPrice: finalPrice ? parseFloat(finalPrice) : null,
+        fromLat: fromLat ? parseFloat(fromLat) : null,
+        fromLng: fromLng ? parseFloat(fromLng) : null,
+        toLat: toLat ? parseFloat(toLat) : null,
+        toLng: toLng ? parseFloat(toLng) : null,
       },
     });
 

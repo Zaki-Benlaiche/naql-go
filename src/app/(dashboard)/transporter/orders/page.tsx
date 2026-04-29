@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Package, Phone, Truck, CheckCircle, MapPin, Camera, Star, Upload } from "lucide-react";
+import { Package, Phone, Truck, CheckCircle, MapPin, Camera } from "lucide-react";
+import { ChatPanel } from "@/components/ChatPanel";
+import { GpsShareButton } from "@/components/GpsShare";
 import { useLanguage } from "@/context/LanguageContext";
 
 type Order = {
@@ -207,6 +209,14 @@ export default function TransporterOrdersPage() {
                         {order.client.phone}
                       </a>
                     </div>
+
+                    {/* Chat + GPS — for active orders */}
+                    {!isDelivered && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                        <ChatPanel requestId={order.id} myRole="TRANSPORTER" />
+                        {isInTransit && <GpsShareButton requestId={order.id} />}
+                      </div>
+                    )}
 
                     {/* Action buttons */}
                     {isDelivered ? (
