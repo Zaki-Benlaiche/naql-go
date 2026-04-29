@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
         include: {
           bids: { include: { transporter: { select: { name: true, phone: true } } } },
           rating: { select: { score: true } },
+          assignedTransporter: { select: { name: true, phone: true, avgRating: true, vehicleType: true } },
         },
         orderBy: { createdAt: "desc" },
       });
@@ -26,15 +27,35 @@ export async function GET(req: NextRequest) {
     }
 
     if (session.user.role === "TRANSPORTER") {
-      const requests = await prisma.transportRequest.findMany({
-        where: { status: "OPEN" },
+      // INTER requests (bidding) — only OPEN + no direct assignment
+      const interRequests = await prisma.transportRequest.findMany({
+        where: { status: "OPEN", transportType: "INTER", assignedTransporterId: null },
         include: {
           client: { select: { name: true, phone: true } },
           bids: { where: { transporterId: session.user.id } },
         },
         orderBy: { createdAt: "desc" },
       });
-      return NextResponse.json(requests);
+
+      // INTRA direct requests assigned to this transporter
+      const directRequests = await prisma.transportRequest.findMany({
+        where: { assignedTransporterId: session.user.id, status: { in: ["OPEN", "ACCEPTED", "IN_TRANSIT"] } },
+        include: {
+          client: { select: { name: true, phone: true } },
+          bids: { where: { transporterId: session.user.id } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      // Merge, de-duplicate by id
+      const seen = new Set<string>();
+      const merged = [...directRequests, ...interRequests].filter(r => {
+        if (seen.has(r.id)) return false;
+        seen.add(r.id);
+        return true;
+      });
+
+      return NextResponse.json(merged);
     }
 
     return NextResponse.json([]);
@@ -52,29 +73,53 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { fromCity, toCity, fromAddress, toAddress, goodsType, vehicleType, size,
-            weight, description, estimatedPrice, scheduledAt, discountPercent, finalPrice,
-            fromLat, fromLng, toLat, toLng } = body;
+    const {
+      fromCity, toCity, fromAddress, toAddress,
+      goodsType, vehicleType, size, weight, description,
+      estimatedPrice, scheduledAt, discountPercent, finalPrice,
+      fromLat, fromLng, toLat, toLng,
+      transportType, assignedTransporterId,
+    } = body;
 
     const request = await prisma.transportRequest.create({
       data: {
         clientId: session.user.id,
-        fromCity, toCity, fromAddress, toAddress,
+        fromCity, toCity,
+        fromAddress: fromAddress || "",
+        toAddress:   toAddress   || "",
         goodsType,
         vehicleType: vehicleType || "any",
-        size: size || "medium",
-        weight: parseFloat(weight),
+        size:        size        || "medium",
+        weight:      parseFloat(weight),
         description: description || null,
-        estimatedPrice: estimatedPrice ? parseFloat(estimatedPrice) : null,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        discountPercent: discountPercent ? parseInt(discountPercent) : null,
-        finalPrice: finalPrice ? parseFloat(finalPrice) : null,
+        estimatedPrice:  estimatedPrice  ? parseFloat(estimatedPrice)  : null,
+        scheduledAt:     scheduledAt     ? new Date(scheduledAt)       : null,
+        discountPercent: discountPercent ? parseInt(discountPercent)   : null,
+        finalPrice:      finalPrice      ? parseFloat(finalPrice)      : null,
         fromLat: fromLat ? parseFloat(fromLat) : null,
         fromLng: fromLng ? parseFloat(fromLng) : null,
-        toLat: toLat ? parseFloat(toLat) : null,
-        toLng: toLng ? parseFloat(toLng) : null,
+        toLat:   toLat   ? parseFloat(toLat)   : null,
+        toLng:   toLng   ? parseFloat(toLng)   : null,
+        transportType:         transportType         || "INTER",
+        assignedTransporterId: assignedTransporterId || null,
       },
     });
+
+    // Notify assigned transporter for INTRA requests
+    if (assignedTransporterId) {
+      try {
+        const client = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } });
+        await prisma.notification.create({
+          data: {
+            userId: assignedTransporterId,
+            title: "📦 طلب نقل مباشر جديد",
+            body: `${fromCity} — طلب من ${client?.name ?? "عميل"}`,
+            type: "direct_request",
+            requestId: request.id,
+          },
+        });
+      } catch (e) { console.error("[notification direct]", e); }
+    }
 
     return NextResponse.json(request, { status: 201 });
   } catch (error) {

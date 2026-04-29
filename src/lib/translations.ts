@@ -342,6 +342,22 @@ export const t = {
     goods_building: "🏗️ مواد بناء",
     goods_other: "📁 أخرى",
 
+    // Phase 4 – Profile & transport types
+    my_profile: "ملفي الشخصي",
+    profile_wilaya: "الولاية التي تعمل بها",
+    profile_vehicle: "نوع مركبتك",
+    profile_save: "حفظ التعديلات",
+    profile_saved: "✅ تم حفظ الملف الشخصي",
+    profile_tip: "ستظهر للعملاء فقط عندما تكون متصلاً وقد حددت ولايتك ونوع مركبتك",
+    direct_badge: "مباشر",
+    intra_badge: "داخل الولاية",
+    inter_badge: "بين الولايات",
+    accept_request: "قبول الطلب",
+    request_accepted: "✅ تم قبول الطلب",
+    pending_direct_title: "طلبات مباشرة في الانتظار",
+    no_wilaya_set: "لم يتم تحديد الولاية بعد",
+    no_vehicle_set: "لم يتم تحديد نوع المركبة بعد",
+
     // Misc
     recent_available: "آخر الطلبات المتاحة",
     kg_suffix: "كغ",
@@ -679,6 +695,22 @@ export const t = {
     goods_food: "🥦 Alimentaire",
     goods_building: "🏗️ Matériaux",
     goods_other: "📁 Autre",
+
+    // Phase 4 – Profile & transport types
+    my_profile: "Mon profil",
+    profile_wilaya: "La wilaya où vous travaillez",
+    profile_vehicle: "Type de votre véhicule",
+    profile_save: "Enregistrer",
+    profile_saved: "✅ Profil enregistré",
+    profile_tip: "Vous serez visible aux clients uniquement si vous êtes en ligne et que vous avez défini votre wilaya et type de véhicule",
+    direct_badge: "Direct",
+    intra_badge: "Intra-wilaya",
+    inter_badge: "Inter-wilaya",
+    accept_request: "Accepter",
+    request_accepted: "✅ Demande acceptée",
+    pending_direct_title: "Demandes directes en attente",
+    no_wilaya_set: "Wilaya non définie",
+    no_vehicle_set: "Véhicule non défini",
 
     // Misc
     recent_available: "Dernières demandes disponibles",

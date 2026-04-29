@@ -13,13 +13,16 @@ model User {
   email     String?  @unique
   password  String
   role      String   // CLIENT | TRANSPORTER | ADMIN
-  isOnline  Boolean  @default(false)
-  isActive  Boolean  @default(true)
-  avgRating Float?
-  totalRatings Int   @default(0)
-  createdAt DateTime @default(now())
+  isOnline     Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  avgRating    Float?
+  totalRatings Int      @default(0)
+  wilaya       String?
+  vehicleType  String?
+  createdAt    DateTime @default(now())
 
   requests        TransportRequest[] @relation("ClientRequests")
+  directRequests  TransportRequest[] @relation("DirectRequests")
   bids            Bid[]
   vehicles        Vehicle[]
   notifications   Notification[]
@@ -67,6 +70,9 @@ model TransportRequest {
 
   discountPercent  Int?
   finalPrice       Float?
+  transportType    String   @default("INTER")
+  assignedTransporterId String?
+  assignedTransporter   User?   @relation("DirectRequests", fields: [assignedTransporterId], references: [id])
 
   bids          Bid[]
   acceptedBidId String?  @unique

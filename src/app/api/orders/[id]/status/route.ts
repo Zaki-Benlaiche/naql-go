@@ -14,17 +14,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const { status } = await req.json();
-    if (!["IN_TRANSIT", "DELIVERED"].includes(status)) {
-      return NextResponse.json({ error: "حالة غير صالحة" }, { status: 400 });
-    }
 
     const request = await prisma.transportRequest.findUnique({
       where: { id },
       include: { bids: { where: { transporterId: session.user.id, status: "ACCEPTED" } } },
     });
 
-    if (!request || request.bids.length === 0) {
+    if (!request) return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
+
+    const hasBid = request.bids.length > 0;
+    const isDirect = request.assignedTransporterId === session.user.id && request.transportType === "INTRA";
+
+    if (!hasBid && !isDirect) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    }
+
+    // Direct INTRA: can accept (OPEN→ACCEPTED), start trip (ACCEPTED→IN_TRANSIT), deliver (IN_TRANSIT→DELIVERED)
+    // Bid-based: can start trip or deliver
+    const allowedStatuses = isDirect
+      ? ["ACCEPTED", "IN_TRANSIT", "DELIVERED"]
+      : ["IN_TRANSIT", "DELIVERED"];
+
+    if (!allowedStatuses.includes(status)) {
+      return NextResponse.json({ error: "حالة غير صالحة" }, { status: 400 });
     }
 
     await prisma.transportRequest.update({
@@ -32,19 +44,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: { status },
     });
 
-    // Create notification for client
-    const notifData =
-      status === "IN_TRANSIT"
-        ? { title: "الناقل في الطريق 🚚", body: `${request.fromCity} ← ${request.toCity}`, type: "in_transit" }
-        : { title: "تم تسليم بضاعتك ✅", body: `${request.fromCity} ← ${request.toCity}`, type: "delivered" };
+    // Notify client
+    let notifData: { title: string; body: string; type: string } | null = null;
+    if (status === "ACCEPTED") {
+      notifData = { title: "✅ تم قبول طلبك", body: `${request.fromCity} — ${request.toCity}`, type: "bid_accepted" };
+    } else if (status === "IN_TRANSIT") {
+      notifData = { title: "الناقل في الطريق 🚚", body: `${request.fromCity} — ${request.toCity}`, type: "in_transit" };
+    } else if (status === "DELIVERED") {
+      notifData = { title: "تم تسليم بضاعتك ✅", body: `${request.fromCity} — ${request.toCity}`, type: "delivered" };
+    }
 
-    await prisma.notification.create({
-      data: {
-        userId: request.clientId,
-        ...notifData,
-        requestId: request.id,
-      },
-    });
+    if (notifData) {
+      try {
+        await prisma.notification.create({
+          data: { userId: request.clientId, ...notifData, requestId: request.id },
+        });
+      } catch (e) { console.error("[status notif]", e); }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

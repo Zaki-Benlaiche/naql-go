@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Truck, LogOut, LayoutDashboard, PlusCircle, List, Globe,
   Menu, X, Bell, Package, Wifi, WifiOff, TrendingUp, FileText,
-  ChevronRight, Zap,
+  ChevronRight, Zap, UserCog,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -62,12 +62,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         { href: "/notifications",     label: tr("notifications"),  icon: Bell },
       ]
     : [
-        { href: "/transporter",         label: tr("dashboard"),        icon: LayoutDashboard },
-        { href: "/transporter/browse",  label: tr("browse_requests"),  icon: List },
-        { href: "/transporter/orders",  label: tr("my_orders"),        icon: Package },
-        { href: "/transporter/earnings", label: tr("my_earnings"),     icon: TrendingUp },
-        { href: "/transporter/documents", label: tr("my_documents"),   icon: FileText },
-        { href: "/notifications",       label: tr("notifications"),     icon: Bell },
+        { href: "/transporter",           label: tr("dashboard"),        icon: LayoutDashboard },
+        { href: "/transporter/browse",    label: tr("browse_requests"),  icon: List },
+        { href: "/transporter/orders",    label: tr("my_orders"),        icon: Package },
+        { href: "/transporter/earnings",  label: tr("my_earnings"),      icon: TrendingUp },
+        { href: "/transporter/documents", label: tr("my_documents"),     icon: FileText },
+        { href: "/transporter/profile",   label: tr("my_profile"),       icon: UserCog },
+        { href: "/notifications",         label: tr("notifications"),    icon: Bell },
       ];
 
   const initial = session?.user?.name?.[0]?.toUpperCase() ?? "U";

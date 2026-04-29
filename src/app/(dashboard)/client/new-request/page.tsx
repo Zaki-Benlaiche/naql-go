@@ -1,16 +1,15 @@
 "use client";
-import { useState, useMemo, lazy, Suspense } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { ArrowRight, ArrowLeft, Calculator, Tag, CheckCircle, Clock, MapPin } from "lucide-react";
-import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
-import { calcPrice } from "@/lib/pricing";
-import dynamic from "next/dynamic";
+import {
+  ArrowRight, ArrowLeft, MapPin, Star,
+  CheckCircle, ChevronDown, WifiOff, RefreshCw, Truck,
+} from "lucide-react";
 
-const MapPicker = dynamic(() => import("@/components/MapPicker").then(m => ({ default: m.MapPicker })), { ssr: false, loading: () => <div className="h-48 bg-gray-100 rounded-xl animate-pulse" /> });
-
-const wilayas = [
+// ── Data ────────────────────────────────────────────────────
+const WILAYAS = [
   "أدرار","الشلف","الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار",
   "البليدة","البويرة","تمنراست","تبسة","تلمسان","تيارت","تيزي وزو","الجزائر",
   "الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي بلعباس","عنابة","قالمة",
@@ -21,388 +20,491 @@ const wilayas = [
   "إن صالح","إن قزام","تقرت","جانت","المغير","المنيعة",
 ];
 
+const VEHICLE_TYPES = [
+  { value: "car",         labelAr: "سيارة",        labelFr: "Voiture",       icon: "🚗", desc_ar: "حتى 500 كغ",    desc_fr: "Jusqu'à 500 kg" },
+  { value: "small_truck", labelAr: "شاحنة صغيرة",  labelFr: "Petit camion",  icon: "🚐", desc_ar: "500 كغ – 3 طن", desc_fr: "500 kg – 3 T" },
+  { value: "big_truck",   labelAr: "شاحنة كبيرة",  labelFr: "Grand camion",  icon: "🚛", desc_ar: "3 طن فأكثر",    desc_fr: "3 T et plus" },
+  { value: "motorcycle",  labelAr: "دراجة توصيل",  labelFr: "Moto livraison",icon: "🏍️", desc_ar: "طرود صغيرة",   desc_fr: "Petits colis" },
+];
+
+const GOODS_TYPES = [
+  { value: "furniture",         labelAr: "أثاث",        labelFr: "Mobilier",    icon: "🛋️" },
+  { value: "electronics",       labelAr: "إلكترونيات",  labelFr: "Électronique",icon: "💻" },
+  { value: "food",              labelAr: "مواد غذائية", labelFr: "Alimentaire", icon: "🍎" },
+  { value: "building_material", labelAr: "مواد بناء",   labelFr: "Matériaux",   icon: "🧱" },
+  { value: "packages",          labelAr: "طرود",        labelFr: "Colis",       icon: "📦" },
+  { value: "other",             labelAr: "أخرى",        labelFr: "Autre",       icon: "📋" },
+];
+
+type Transporter = {
+  id: string; name: string; phone: string;
+  vehicleType: string | null; avgRating: number | null;
+  totalRatings: number; isOnline: boolean; wilaya: string | null;
+};
+
+function Stars({ n }: { n: number | null }) {
+  const v = Math.round(n ?? 0);
+  return (
+    <span className="flex items-center gap-0.5">
+      {[1,2,3,4,5].map(i => (
+        <Star key={i} className={`w-3 h-3 ${i <= v ? "fill-orange-400 text-orange-400" : "text-slate-200"}`} />
+      ))}
+    </span>
+  );
+}
+
+function WilayaDropdown({
+  value, onChange, placeholder, accentColor,
+}: { value: string; onChange: (v: string) => void; placeholder: string; accentColor: "blue" | "orange" }) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const filtered = useMemo(() => WILAYAS.filter(w => w.includes(search)), [search]);
+  const accent = accentColor === "blue"
+    ? { border: "border-blue-400", bg: "bg-blue-50", icon: "text-blue-500", ring: "focus:ring-blue-300", item: "hover:bg-blue-50", active: "bg-blue-50 text-blue-600" }
+    : { border: "border-orange-400", bg: "bg-orange-50", icon: "text-orange-500", ring: "focus:ring-orange-300", item: "hover:bg-orange-50", active: "bg-orange-50 text-orange-600" };
+
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen(!open)}
+        className={`w-full flex items-center justify-between border rounded-xl px-4 py-3 text-sm transition ${
+          value ? `${accent.border} ${accent.bg} font-semibold text-slate-900` : "border-slate-200 bg-slate-50/50 text-slate-400"
+        }`}>
+        <span className="flex items-center gap-2">
+          <MapPin className={`w-4 h-4 ${value ? accent.icon : "text-slate-400"}`} />
+          {value || placeholder}
+        </span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute z-30 w-full mt-1 bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden">
+          <div className="p-2 border-b border-slate-50">
+            <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="ابحث... / Rechercher..."
+              className={`w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 ${accent.ring}`} />
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            {filtered.map(w => (
+              <button key={w} type="button"
+                onClick={() => { onChange(w); setSearch(""); setOpen(false); }}
+                className={`w-full text-start px-4 py-2.5 text-sm transition-colors ${
+                  value === w ? `${accent.active} font-semibold` : `text-slate-700 ${accent.item}`
+                }`}>
+                {w}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Page ────────────────────────────────────────────────────
 export default function NewRequestPage() {
+  const { lang } = useLanguage();
   const router = useRouter();
-  const { lang, tr } = useLanguage();
-  const BackIcon = lang === "ar" ? ArrowRight : ArrowLeft;
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    fromCity: "", toCity: "", fromAddress: "", toAddress: "",
-    goodsType: "", vehicleType: "any", size: "medium", weight: "", description: "",
-    scheduledDate: "", scheduledTime: "", isScheduled: false,
-  });
-  const [fromCoords, setFromCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [toCoords, setToCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [showFromMap, setShowFromMap] = useState(false);
-  const [showToMap, setShowToMap] = useState(false);
 
-  // Coupon state
-  const [couponCode, setCouponCode] = useState("");
-  const [coupon, setCoupon] = useState<{ discountPercent: number; code: string; couponId: string } | null>(null);
-  const [couponError, setCouponError] = useState("");
-  const [checkingCoupon, setCheckingCoupon] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [transportType, setTransportType] = useState<"INTER" | "INTRA" | "">("");
 
-  const goodsTypes = [
-    { value: "packages", label: tr("goods_packages") },
-    { value: "furniture", label: tr("goods_furniture") },
-    { value: "electronics", label: tr("goods_electronics") },
-    { value: "food", label: tr("goods_food") },
-    { value: "building_material", label: tr("goods_building") },
-    { value: "other", label: tr("goods_other") },
-  ];
+  // INTRA
+  const [selectedWilaya,  setSelectedWilaya]  = useState("");
+  const [selectedVehicle, setSelectedVehicle] = useState("");
+  const [drivers,         setDrivers]         = useState<Transporter[]>([]);
+  const [loadingDrivers,  setLoadingDrivers]  = useState(false);
+  const [selectedDriver,  setSelectedDriver]  = useState<Transporter | null>(null);
 
-  const vehicleTypes = [
-    { value: "any",          label: tr("vt_any"),          icon: "🚗" },
-    { value: "pickup",       label: tr("vt_pickup"),       icon: "🛻" },
-    { value: "van",          label: tr("vt_van"),          icon: "🚐" },
-    { value: "light_truck",  label: tr("vt_light_truck"),  icon: "🚛" },
-    { value: "heavy_truck",  label: tr("vt_heavy_truck"),  icon: "🚚" },
-    { value: "refrigerated", label: tr("vt_refrigerated"), icon: "🧊" },
-    { value: "flatbed",      label: tr("vt_flatbed"),      icon: "🏗️" },
-    { value: "offroad",      label: tr("vt_offroad"),      icon: "🚙" },
-    { value: "crane",        label: tr("vt_crane"),        icon: "🏗️" },
-    { value: "taxi",         label: tr("vt_taxi"),         icon: "🚕" },
-  ];
+  // INTER
+  const [fromCity, setFromCity] = useState("");
+  const [toCity,   setToCity]   = useState("");
 
-  const sizes = [
-    { value: "small",       label: tr("size_small"),       icon: "📦" },
-    { value: "medium",      label: tr("size_medium"),      icon: "📦" },
-    { value: "large",       label: tr("size_large"),       icon: "📦" },
-    { value: "extra_large", label: tr("size_extra_large"), icon: "📦" },
-  ];
+  // Step 4 — details
+  const [fromAddress, setFromAddress] = useState("");
+  const [toAddress,   setToAddress]   = useState("");
+  const [goodsType,   setGoodsType]   = useState("");
+  const [weight,      setWeight]      = useState("");
+  const [description, setDescription] = useState("");
 
-  function set(key: string, value: string) {
-    setForm(prev => ({ ...prev, [key]: value }));
+  const [submitting, setSubmitting] = useState(false);
+  const [toast,      setToast]      = useState<string | null>(null);
+
+  const ar = lang === "ar";
+
+  async function fetchDrivers() {
+    if (!selectedWilaya || !selectedVehicle) return;
+    setLoadingDrivers(true); setDrivers([]); setSelectedDriver(null);
+    try {
+      const res = await fetch(`/api/transporters?wilaya=${encodeURIComponent(selectedWilaya)}&vehicleType=${selectedVehicle}`);
+      if (res.ok) setDrivers(await res.json());
+    } finally { setLoadingDrivers(false); }
   }
 
-  async function applyCoupon() {
-    if (!couponCode.trim()) return;
-    setCheckingCoupon(true); setCouponError("");
-    const res = await fetch("/api/coupons/apply", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: couponCode }),
-    });
-    const data = await res.json();
-    setCheckingCoupon(false);
-    if (!res.ok) { setCouponError(data.error); setCoupon(null); }
-    else setCoupon(data);
+  async function handleSubmit() {
+    if (!goodsType || !weight) return;
+    setSubmitting(true);
+    try {
+      const isIntra = transportType === "INTRA";
+      const res = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromCity:    isIntra ? selectedWilaya : fromCity,
+          toCity:      isIntra ? selectedWilaya : toCity,
+          fromAddress, toAddress, goodsType, weight,
+          vehicleType: isIntra ? selectedVehicle : "any",
+          size: "medium",
+          description: description || null,
+          transportType,
+          assignedTransporterId: isIntra ? selectedDriver?.id : null,
+        }),
+      });
+      if (res.ok) {
+        setToast(ar ? "✅ تم إرسال الطلب بنجاح!" : "✅ Demande envoyée !");
+        setTimeout(() => router.push("/client/requests"), 1500);
+      }
+    } finally { setSubmitting(false); }
   }
 
-  // Live price estimate
-  const priceEstimate = useMemo(() => {
-    const w = parseFloat(form.weight);
-    if (!form.fromCity || !form.toCity || !w || w <= 0 || form.fromCity === form.toCity) return null;
-    return calcPrice(form.fromCity, form.toCity, w, form.size);
-  }, [form.fromCity, form.toCity, form.weight, form.size]);
+  const inputCls = "w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition";
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true); setError("");
-    let scheduledAt: string | null = null;
-    if (form.isScheduled && form.scheduledDate) {
-      scheduledAt = new Date(`${form.scheduledDate}T${form.scheduledTime || "08:00"}`).toISOString();
-    }
-    const basePrice = priceEstimate ? Math.round((priceEstimate.minPrice + priceEstimate.maxPrice) / 2) : null;
-    const finalPrice = basePrice && coupon ? Math.round(basePrice * (1 - coupon.discountPercent / 100)) : basePrice;
+  const vLabel = (v: string) => {
+    const found = VEHICLE_TYPES.find(x => x.value === v);
+    return found ? (ar ? found.labelAr : found.labelFr) : v;
+  };
 
-    const res = await fetch("/api/requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        scheduledAt,
-        estimatedPrice: basePrice,
-        discountPercent: coupon?.discountPercent ?? null,
-        finalPrice,
-        fromLat: fromCoords?.lat ?? null,
-        fromLng: fromCoords?.lng ?? null,
-        toLat: toCoords?.lat ?? null,
-        toLng: toCoords?.lng ?? null,
-      }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) { setError(data.error || tr("error_occurred")); return; }
-    router.push("/client/requests");
-  }
-
-  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent bg-white transition";
-  const labelClass = "block text-sm font-medium text-gray-700 mb-1.5";
+  // Step labels
+  const stepLabels = ar
+    ? ["نوع النقل", "تفاصيل الرحلة", ar && transportType === "INTRA" ? "اختر السائق" : "المسار", "تفاصيل الطلب"]
+    : ["Type", "Trajet", transportType === "INTRA" ? "Chauffeur" : "Trajet", "Détails"];
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto">
+      {toast && (
+        <div className="fixed top-4 start-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white text-sm font-semibold px-6 py-3 rounded-2xl shadow-xl">
+          {toast}
+        </div>
+      )}
 
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <Link href="/client" className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-            <BackIcon className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">{tr("new_request_title")}</h1>
-            <p className="text-gray-500 text-xs md:text-sm mt-0.5">{tr("new_request_sub")}</p>
+      <div className="max-w-xl mx-auto">
+
+        {/* Progress */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            {[1,2,3,4].map(s => (
+              <div key={s} className="flex items-center gap-2 flex-1 last:flex-none">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
+                  step > s  ? "bg-emerald-500 text-white" :
+                  step === s ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30" :
+                  "bg-white border-2 border-slate-200 text-slate-400"
+                }`}>
+                  {step > s ? <CheckCircle className="w-4 h-4" /> : s}
+                </div>
+                {s < 4 && <div className={`h-1 flex-1 rounded-full transition-all ${step > s ? "bg-emerald-400" : "bg-slate-200"}`} />}
+              </div>
+            ))}
           </div>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+            {stepLabels[step - 1]}
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* ── STEP 1: Type ── */}
+        {step === 1 && (
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">
+              {ar ? "نوع النقل" : "Type de transport"}
+            </h1>
+            <p className="text-slate-500 text-sm mb-7">
+              {ar ? "اختر الخدمة المناسبة لاحتياجك" : "Choisissez le service adapté"}
+            </p>
 
-          {/* Route section */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
-            <h2 className="font-bold text-gray-900 mb-4 text-sm md:text-base">{tr("route_section")}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>{tr("from_city")}</label>
-                <select value={form.fromCity} onChange={e => set("fromCity", e.target.value)} className={inputClass} required>
-                  <option value="">{tr("select_wilaya")}</option>
-                  {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelClass}>{tr("to_city")}</label>
-                <select value={form.toCity} onChange={e => set("toCity", e.target.value)} className={inputClass} required>
-                  <option value="">{tr("select_wilaya")}</option>
-                  {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelClass}>{tr("from_address")}</label>
-                <input value={form.fromAddress} onChange={e => set("fromAddress", e.target.value)}
-                  placeholder={tr("address_placeholder")} className={inputClass} required />
-                <button type="button" onClick={() => setShowFromMap(s => !s)}
-                  className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 mt-1.5 font-medium transition-colors">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {showFromMap ? tr("location_selected") : tr("pick_location")}
-                  {fromCoords && " ✓"}
-                </button>
-                {showFromMap && (
-                  <div className="mt-2">
-                    <MapPicker lat={fromCoords?.lat ?? null} lng={fromCoords?.lng ?? null}
-                      label={tr("pickup_location")}
-                      onChange={(lat, lng, label) => {
-                        setFromCoords({ lat, lng });
-                        if (!form.fromAddress) set("fromAddress", label);
-                      }} />
+            <div className="space-y-4">
+              <button onClick={() => { setTransportType("INTER"); setStep(3); }}
+                className="group w-full relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-5 text-start hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-200">
+                <div className="absolute -end-6 -top-6 w-32 h-32 bg-blue-500/5 rounded-full group-hover:scale-150 transition-all duration-300" />
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30 shrink-0">
+                    🚛
                   </div>
-                )}
-              </div>
-              <div>
-                <label className={labelClass}>{tr("to_address")}</label>
-                <input value={form.toAddress} onChange={e => set("toAddress", e.target.value)}
-                  placeholder={tr("address_placeholder")} className={inputClass} required />
-                <button type="button" onClick={() => setShowToMap(s => !s)}
-                  className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 mt-1.5 font-medium transition-colors">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {showToMap ? tr("location_selected") : tr("pick_location")}
-                  {toCoords && " ✓"}
-                </button>
-                {showToMap && (
-                  <div className="mt-2">
-                    <MapPicker lat={toCoords?.lat ?? null} lng={toCoords?.lng ?? null}
-                      label={tr("delivery_location")}
-                      onChange={(lat, lng, label) => {
-                        setToCoords({ lat, lng });
-                        if (!form.toAddress) set("toAddress", label);
-                      }} />
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900 text-base">
+                      {ar ? "نقل عبر الولايات" : "Transport inter-wilayas"}
+                    </p>
+                    <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">
+                      {ar ? "الناقلون يتنافسون بعروضهم — اختر أفضل سعر" : "Les transporteurs font leurs offres — choisissez le meilleur prix"}
+                    </p>
+                    <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
+                      {ar ? "نظام المزايدة" : "Système d'enchères"}
+                    </span>
                   </div>
-                )}
-              </div>
+                  <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition-colors shrink-0" />
+                </div>
+              </button>
+
+              <button onClick={() => { setTransportType("INTRA"); setStep(2); }}
+                className="group w-full relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-5 text-start hover:border-orange-400 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-200">
+                <div className="absolute -end-6 -top-6 w-32 h-32 bg-orange-500/5 rounded-full group-hover:scale-150 transition-all duration-300" />
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-orange-500/30 shrink-0">
+                    📦
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900 text-base">
+                      {ar ? "نقل داخل الولاية" : "Transport intra-wilaya"}
+                    </p>
+                    <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">
+                      {ar ? "اختر سائقاً متاحاً في ولايتك مباشرة" : "Choisissez directement un chauffeur disponible dans votre wilaya"}
+                    </p>
+                    <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
+                      {ar ? "اختيار مباشر" : "Sélection directe"}
+                    </span>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-orange-500 transition-colors shrink-0" />
+                </div>
+              </button>
             </div>
           </div>
+        )}
 
-          {/* Vehicle type section */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
-            <h2 className="font-bold text-gray-900 mb-4 text-sm md:text-base">{tr("vehicle_section")}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
-              {vehicleTypes.map(v => (
-                <button key={v.value} type="button" onClick={() => set("vehicleType", v.value)}
-                  className={`p-2.5 md:p-3 rounded-xl border-2 text-xs md:text-sm text-center transition-all font-medium flex flex-col items-center gap-1 ${
-                    form.vehicleType === v.value
-                      ? "border-orange-500 bg-orange-50 text-orange-700"
-                      : "border-gray-200 hover:border-gray-300 text-gray-600"
-                  }`}
-                >
-                  <span className="text-lg leading-none">{v.icon}</span>
-                  <span>{v.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Goods + size + weight section */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
-            <h2 className="font-bold text-gray-900 mb-4 text-sm md:text-base">{tr("goods_section")}</h2>
-
-            {/* Goods type */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 mb-5">
-              {goodsTypes.map(g => (
-                <button key={g.value} type="button" onClick={() => set("goodsType", g.value)}
-                  className={`p-2.5 md:p-3 rounded-xl border-2 text-xs md:text-sm text-center transition-all font-medium ${
-                    form.goodsType === g.value
-                      ? "border-orange-500 bg-orange-50 text-orange-700"
-                      : "border-gray-200 hover:border-gray-300 text-gray-600"
-                  }`}
-                >
-                  {g.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Size */}
-            <p className="text-sm font-medium text-gray-700 mb-2">{tr("size_section")}</p>
-            <div className="grid grid-cols-4 gap-2 mb-5">
-              {sizes.map(s => (
-                <button key={s.value} type="button" onClick={() => set("size", s.value)}
-                  className={`py-2.5 px-2 rounded-xl border-2 text-xs text-center transition-all font-medium ${
-                    form.size === s.value
-                      ? "border-orange-500 bg-orange-50 text-orange-700"
-                      : "border-gray-200 hover:border-gray-300 text-gray-600"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Weight */}
-            <div className="mb-4">
-              <label className={labelClass}>{tr("weight_label")}</label>
-              <input type="number" value={form.weight} onChange={e => set("weight", e.target.value)}
-                placeholder={tr("weight_placeholder")} min="1" className={inputClass} required />
-            </div>
-
-            {/* Description */}
+        {/* ── STEP 2: INTRA — wilaya + vehicle ── */}
+        {step === 2 && (
+          <div className="space-y-6">
             <div>
-              <label className={labelClass}>
-                {tr("description_label")} <span className="text-gray-400 font-normal">{tr("description_optional")}</span>
-              </label>
-              <textarea value={form.description} onChange={e => set("description", e.target.value)}
-                placeholder={tr("description_placeholder")} rows={3}
-                className={`${inputClass} resize-none`} />
+              <h1 className="text-2xl font-bold text-slate-900 mb-1">
+                {ar ? "أين تريد النقل؟" : "Où souhaitez-vous livrer ?"}
+              </h1>
+              <p className="text-slate-500 text-sm">{ar ? "اختر ولايتك ونوع المركبة" : "Sélectionnez votre wilaya et le type de véhicule"}</p>
             </div>
-          </div>
 
-          {/* Schedule section */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
-            <h2 className="font-bold text-gray-900 mb-4 text-sm md:text-base flex items-center gap-2">
-              <Clock className="w-4 h-4 text-orange-400" />
-              {tr("schedule_section")}
-            </h2>
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {[
-                { value: false, label: tr("schedule_now"), icon: "⚡" },
-                { value: true,  label: tr("schedule_later"), icon: "📅" },
-              ].map(o => (
-                <button key={String(o.value)} type="button"
-                  onClick={() => setForm(p => ({ ...p, isScheduled: o.value }))}
-                  className={`py-3 rounded-xl border-2 text-xs font-medium text-center transition-all ${
-                    form.isScheduled === o.value
-                      ? "border-orange-500 bg-orange-50 text-orange-700"
-                      : "border-gray-200 text-gray-600 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="text-base block mb-0.5">{o.icon}</span>
-                  {o.label}
-                </button>
-              ))}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">{ar ? "الولاية" : "Wilaya"}</label>
+              <WilayaDropdown value={selectedWilaya} onChange={setSelectedWilaya}
+                placeholder={ar ? "اختر الولاية..." : "Choisir la wilaya..."} accentColor="orange" />
             </div>
-            {form.isScheduled && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={labelClass}>{tr("schedule_date")}</label>
-                  <input type="date" value={form.scheduledDate}
-                    min={new Date().toISOString().split("T")[0]}
-                    onChange={e => setForm(p => ({ ...p, scheduledDate: e.target.value }))}
-                    className={inputClass} required={form.isScheduled} />
-                </div>
-                <div>
-                  <label className={labelClass}>{tr("schedule_time")}</label>
-                  <input type="time" value={form.scheduledTime}
-                    onChange={e => setForm(p => ({ ...p, scheduledTime: e.target.value }))}
-                    className={inputClass} />
-                </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-3">{ar ? "نوع المركبة" : "Type de véhicule"}</label>
+              <div className="grid grid-cols-2 gap-3">
+                {VEHICLE_TYPES.map(v => (
+                  <button key={v.value} type="button" onClick={() => setSelectedVehicle(v.value)}
+                    className={`flex flex-col items-start p-4 rounded-2xl border-2 transition-all text-start ${
+                      selectedVehicle === v.value
+                        ? "border-orange-500 bg-orange-50 shadow-md shadow-orange-500/10"
+                        : "border-slate-100 bg-white hover:border-orange-200 hover:shadow-sm"
+                    }`}>
+                    <span className="text-2xl mb-2">{v.icon}</span>
+                    <p className="font-bold text-slate-900 text-sm">{ar ? v.labelAr : v.labelFr}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{ar ? v.desc_ar : v.desc_fr}</p>
+                    {selectedVehicle === v.value && <CheckCircle className="w-4 h-4 text-orange-500 mt-2" />}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Coupon section */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
-            <h2 className="font-bold text-gray-900 mb-3 text-sm md:text-base flex items-center gap-2">
-              <Tag className="w-4 h-4 text-orange-400" />
-              {tr("coupon_section")}
-            </h2>
-            {coupon ? (
-              <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-                <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
-                <div>
-                  <p className="text-sm font-bold text-green-700">{coupon.code} — {coupon.discountPercent}% {tr("coupon_discount")}</p>
-                  <p className="text-xs text-green-600">{tr("coupon_applied")}</p>
-                </div>
-                <button type="button" onClick={() => { setCoupon(null); setCouponCode(""); }}
-                  className="ms-auto text-xs text-gray-400 hover:text-red-500 transition-colors">✕</button>
+            <div className="flex gap-3">
+              <button onClick={() => setStep(1)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <button onClick={() => { fetchDrivers(); setStep(3); }} disabled={!selectedWilaya || !selectedVehicle}
+                className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                {ar ? "عرض السائقين المتاحين" : "Voir les chauffeurs disponibles"}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: Drivers (INTRA) ── */}
+        {step === 3 && transportType === "INTRA" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">{ar ? "السائقون المتاحون" : "Chauffeurs disponibles"}</h1>
+                <p className="text-sm text-slate-500 mt-0.5">{selectedWilaya} · {vLabel(selectedVehicle)}</p>
+              </div>
+              <button onClick={fetchDrivers} disabled={loadingDrivers}
+                className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition">
+                <RefreshCw className={`w-4 h-4 ${loadingDrivers ? "animate-spin" : ""}`} />
+              </button>
+            </div>
+
+            {loadingDrivers ? (
+              <div className="space-y-3">
+                {[1,2,3].map(i => (
+                  <div key={i} className="card-premium p-4 flex items-center gap-3 animate-pulse">
+                    <div className="w-12 h-12 bg-slate-100 rounded-2xl shrink-0" />
+                    <div className="flex-1 space-y-2"><div className="h-4 bg-slate-100 rounded-full w-1/2" /><div className="h-3 bg-slate-100 rounded-full w-1/3" /></div>
+                    <div className="w-20 h-9 bg-slate-100 rounded-xl" />
+                  </div>
+                ))}
+              </div>
+            ) : drivers.length === 0 ? (
+              <div className="card-premium p-12 text-center">
+                <div className="text-5xl mb-3">😔</div>
+                <p className="font-bold text-slate-700">{ar ? "لا يوجد سائقون متاحون الآن" : "Aucun chauffeur disponible"}</p>
+                <p className="text-sm text-slate-400 mt-1">{ar ? "حاول لاحقاً أو عدّل اختيارك" : "Réessayez plus tard"}</p>
+                <button onClick={() => setStep(2)} className="mt-4 text-orange-500 text-sm font-semibold hover:text-orange-600">
+                  {ar ? "← تعديل الاختيار" : "← Modifier"}
+                </button>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <input value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())}
-                  placeholder={tr("coupon_placeholder")}
-                  className={`${inputClass} flex-1 uppercase tracking-widest font-mono`} />
-                <button type="button" onClick={applyCoupon} disabled={checkingCoupon || !couponCode.trim()}
-                  className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold text-sm px-4 rounded-xl transition-colors shrink-0">
-                  {checkingCoupon
-                    ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin block" />
-                    : tr("coupon_apply")
-                  }
-                </button>
-              </div>
+              <>
+                <p className="text-xs font-semibold text-slate-400">{drivers.length} {ar ? "سائق متاح" : "chauffeur(s)"}</p>
+                <div className="space-y-3">
+                  {drivers.map(d => (
+                    <button key={d.id} type="button"
+                      onClick={() => setSelectedDriver(selectedDriver?.id === d.id ? null : d)}
+                      className={`w-full card-premium p-4 flex items-center gap-4 text-start transition-all ${
+                        selectedDriver?.id === d.id ? "border-2 border-orange-500 shadow-lg shadow-orange-500/10" : "hover:shadow-md"
+                      }`}>
+                      <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl flex items-center justify-center text-xl shrink-0 border border-slate-100">
+                        {VEHICLE_TYPES.find(v => v.value === d.vehicleType)?.icon ?? "🚗"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="font-bold text-slate-900 text-sm">{d.name}</p>
+                          <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            d.isOnline ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"
+                          }`}>
+                            {d.isOnline
+                              ? <><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />{ar ? "متاح الآن" : "En ligne"}</>
+                              : <><WifiOff className="w-2.5 h-2.5" />{ar ? "غير متاح" : "Hors ligne"}</>
+                            }
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Stars n={d.avgRating} />
+                          {d.avgRating != null && <span className="text-xs font-semibold text-slate-600">{d.avgRating.toFixed(1)}</span>}
+                          {d.totalRatings > 0 && <span className="text-xs text-slate-400">({d.totalRatings} {ar ? "تقييم" : "avis"})</span>}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5">{vLabel(d.vehicleType ?? "")}</p>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                        selectedDriver?.id === d.id ? "bg-orange-500 border-orange-500" : "border-slate-200"
+                      }`}>
+                        {selectedDriver?.id === d.id && <CheckCircle className="w-4 h-4 text-white" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
-            {couponError && <p className="text-red-500 text-xs mt-2">{couponError}</p>}
-          </div>
 
-          {/* Price estimate card */}
-          {priceEstimate && (
-            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 md:p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Calculator className="w-4 h-4 text-orange-500" />
-                <span className="font-bold text-orange-700 text-sm">{tr("price_estimate")}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white rounded-xl px-3 py-2.5">
-                  <p className="text-xs text-gray-400 font-medium mb-0.5">{tr("distance_label")}</p>
-                  <p className="font-bold text-gray-900 text-sm">
-                    {priceEstimate.distanceKm.toLocaleString()} {tr("km_suffix")}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl px-3 py-2.5">
-                  <p className="text-xs text-gray-400 font-medium mb-0.5">{tr("price_range")}</p>
-                  {coupon ? (
-                    <div>
-                      <p className="text-xs line-through text-gray-400">
-                        {priceEstimate.minPrice.toLocaleString()} – {priceEstimate.maxPrice.toLocaleString()} {tr("dz_suffix")}
-                      </p>
-                      <p className="font-bold text-green-600 text-sm">
-                        {Math.round(priceEstimate.minPrice * (1 - coupon.discountPercent / 100)).toLocaleString()} – {Math.round(priceEstimate.maxPrice * (1 - coupon.discountPercent / 100)).toLocaleString()} {tr("dz_suffix")}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="font-bold text-orange-600 text-sm">
-                      {priceEstimate.minPrice.toLocaleString()} – {priceEstimate.maxPrice.toLocaleString()} {tr("dz_suffix")}
-                    </p>
-                  )}
-                </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setStep(2)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <button onClick={() => setStep(4)} disabled={!selectedDriver}
+                className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                {ar ? "التالي — تفاصيل الطلب" : "Suivant — Détails"}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: INTER — from/to ── */}
+        {step === 3 && transportType === "INTER" && (
+          <div className="space-y-5">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-1">{ar ? "من أين إلى أين؟" : "D'où vers où ?"}</h1>
+              <p className="text-slate-500 text-sm">{ar ? "حدد مدينة الانطلاق والوصول" : "Sélectionnez les wilayas de départ et d'arrivée"}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">{ar ? "ولاية الانطلاق" : "Wilaya de départ"}</label>
+              <WilayaDropdown value={fromCity} onChange={setFromCity}
+                placeholder={ar ? "اختر ولاية الانطلاق..." : "Choisir la wilaya de départ..."} accentColor="blue" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">{ar ? "ولاية الوصول" : "Wilaya d'arrivée"}</label>
+              <WilayaDropdown value={toCity} onChange={setToCity}
+                placeholder={ar ? "اختر ولاية الوصول..." : "Choisir la wilaya d'arrivée..."} accentColor="orange" />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setStep(1)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <button onClick={() => setStep(4)} disabled={!fromCity || !toCity}
+                className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                {ar ? "التالي — تفاصيل الطلب" : "Suivant — Détails"}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: Details ── */}
+        {step === 4 && (
+          <div className="space-y-5">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">{ar ? "تفاصيل الطلب" : "Détails de la commande"}</h1>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs bg-[#0A1628] text-white font-semibold px-3 py-1 rounded-full">
+                  {transportType === "INTRA" ? selectedWilaya : `${fromCity} → ${toCity}`}
+                </span>
+                {transportType === "INTRA" && selectedDriver && (
+                  <span className="text-xs bg-orange-100 text-orange-700 font-semibold px-3 py-1 rounded-full flex items-center gap-1">
+                    <Truck className="w-3 h-3" /> {selectedDriver.name}
+                  </span>
+                )}
               </div>
             </div>
-          )}
 
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">{error}</div>
-          )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{ar ? "عنوان الاستلام" : "Adresse de ramassage"}</label>
+                <input value={fromAddress} onChange={e => setFromAddress(e.target.value)}
+                  placeholder={ar ? "الحي، الشارع..." : "Quartier, rue..."} className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{ar ? "عنوان التسليم" : "Adresse de livraison"}</label>
+                <input value={toAddress} onChange={e => setToAddress(e.target.value)}
+                  placeholder={ar ? "الحي، الشارع..." : "Quartier, rue..."} className={inputCls} />
+              </div>
+            </div>
 
-          <button type="submit" disabled={loading || !form.goodsType}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-3.5 rounded-2xl transition-colors shadow-sm text-sm md:text-base">
-            {loading ? tr("publishing") : tr("publish_btn")}
-          </button>
-        </form>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">{ar ? "نوع البضاعة" : "Type de marchandise"}</label>
+              <div className="grid grid-cols-3 gap-2">
+                {GOODS_TYPES.map(g => (
+                  <button key={g.value} type="button" onClick={() => setGoodsType(g.value)}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
+                      goodsType === g.value ? "border-orange-500 bg-orange-50 shadow-sm" : "border-slate-100 bg-white hover:border-orange-200"
+                    }`}>
+                    <span className="text-xl">{g.icon}</span>
+                    <span className="text-xs font-semibold text-slate-700 leading-tight text-center">{ar ? g.labelAr : g.labelFr}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">{ar ? "الوزن التقريبي (كغ)" : "Poids approximatif (kg)"}</label>
+              <input type="number" value={weight} onChange={e => setWeight(e.target.value)}
+                placeholder="ex: 200" min="1" className={inputCls} />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">{ar ? "ملاحظات (اختياري)" : "Notes (facultatif)"}</label>
+              <textarea value={description} onChange={e => setDescription(e.target.value)}
+                placeholder={ar ? "تفاصيل إضافية..." : "Détails supplémentaires..."} rows={3}
+                className={`${inputCls} resize-none`} />
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setStep(3)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <button onClick={handleSubmit} disabled={submitting || !goodsType || !weight}
+                className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2">
+                {submitting
+                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{ar ? "جارٍ الإرسال..." : "Envoi..."}</>
+                  : <>{ar ? "إرسال الطلب 🚀" : "Envoyer la demande 🚀"}</>
+                }
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
