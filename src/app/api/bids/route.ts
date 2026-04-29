@@ -22,6 +22,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "الطلب غير متاح" }, { status: 400 });
     }
 
+    // Check for duplicate bid
+    const existingBid = await prisma.bid.findUnique({
+      where: { requestId_transporterId: { requestId, transporterId: session.user.id } },
+    });
+    if (existingBid) {
+      return NextResponse.json({ error: "لقد أرسلت عرضاً على هذا الطلب مسبقاً" }, { status: 400 });
+    }
+
+    const transporter = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true },
+    });
+
     const bid = await prisma.bid.create({
       data: {
         requestId,
@@ -30,19 +43,22 @@ export async function POST(req: NextRequest) {
         estimatedTime,
         note: note || null,
       },
-      include: { transporter: { select: { name: true } } },
     });
 
-    // Notify the client that they received a new bid
-    await prisma.notification.create({
-      data: {
-        userId: request.client.id,
-        title: "💰 عرض جديد على طلبك",
-        body: `${request.fromCity} ← ${request.toCity} — ${parseFloat(price).toLocaleString()} دج من ${bid.transporter.name}`,
-        type: "new_bid",
-        requestId,
-      },
-    });
+    // Notify the client (non-fatal)
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: request.client.id,
+          title: "💰 عرض جديد على طلبك",
+          body: `${request.fromCity} ← ${request.toCity} — ${parseFloat(price).toLocaleString()} دج من ${transporter?.name ?? "ناقل"}`,
+          type: "new_bid",
+          requestId,
+        },
+      });
+    } catch (notifErr) {
+      console.error("[bids notification]", notifErr);
+    }
 
     return NextResponse.json(bid, { status: 201 });
   } catch (error) {
