@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Package, Phone, Truck, CheckCircle, MapPin } from "lucide-react";
+import { Package, Phone, Truck, CheckCircle, MapPin, Camera, Star, Upload } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 type Order = {
@@ -10,22 +10,47 @@ type Order = {
   fromAddress: string; toAddress: string;
   goodsType: string; weight: number;
   status: string; updatedAt: string;
+  proofOfDelivery: string | null;
   client: { name: string; phone: string };
   bids: { price: number; estimatedTime: string; note: string | null }[];
 };
 
 const statusConfig: Record<string, { color: string; bg: string }> = {
-  ACCEPTED:  { color: "text-blue-700",  bg: "bg-blue-50"  },
-  IN_TRANSIT:{ color: "text-orange-700",bg: "bg-orange-50"},
-  DELIVERED: { color: "text-green-700", bg: "bg-green-50" },
+  ACCEPTED:   { color: "text-blue-700",   bg: "bg-blue-50"   },
+  IN_TRANSIT: { color: "text-orange-700", bg: "bg-orange-50" },
+  DELIVERED:  { color: "text-green-700",  bg: "bg-green-50"  },
 };
+
+function compressImage(file: File, maxWidth = 800): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.7));
+      };
+      img.onerror = reject;
+      img.src = e.target!.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function TransporterOrdersPage() {
   const { lang, tr } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [proofTarget, setProofTarget] = useState<string | null>(null);
 
   async function load() {
     const res = await fetch("/api/orders");
@@ -56,6 +81,28 @@ export default function TransporterOrdersPage() {
     }
   }
 
+  async function handleProofUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !proofTarget) return;
+    setUploading(proofTarget);
+    try {
+      const base64 = await compressImage(file);
+      const res = await fetch(`/api/orders/${proofTarget}/proof`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proof: base64 }),
+      });
+      if (res.ok) {
+        showToast(tr("proof_uploaded"));
+        await load();
+      }
+    } finally {
+      setUploading(null);
+      setProofTarget(null);
+      e.target.value = "";
+    }
+  }
+
   const statusLabel = (s: string) => {
     if (s === "ACCEPTED")   return lang === "ar" ? "مقبول — في الانتظار" : "Accepté — En attente";
     if (s === "IN_TRANSIT") return lang === "ar" ? "🚚 في الطريق"        : "🚚 En route";
@@ -66,6 +113,16 @@ export default function TransporterOrdersPage() {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handleProofUpload}
+        />
 
         {/* Toast */}
         {toast && (
@@ -136,7 +193,7 @@ export default function TransporterOrdersPage() {
                       </div>
                     </div>
 
-                    {/* Client contact – always visible */}
+                    {/* Client contact */}
                     <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4">
                       <div>
                         <p className="text-xs text-blue-500 font-medium mb-0.5">{tr("call_client")}</p>
@@ -153,9 +210,37 @@ export default function TransporterOrdersPage() {
 
                     {/* Action buttons */}
                     {isDelivered ? (
-                      <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
-                        <CheckCircle className="w-5 h-5" />
-                        {tr("order_delivered")}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
+                          <CheckCircle className="w-5 h-5" />
+                          {tr("order_delivered")}
+                        </div>
+
+                        {/* Proof of delivery */}
+                        {order.proofOfDelivery ? (
+                          <div>
+                            <p className="text-xs text-gray-500 font-medium mb-2">{tr("proof_of_delivery")}</p>
+                            <img
+                              src={order.proofOfDelivery}
+                              alt="proof"
+                              className="w-full max-h-48 object-cover rounded-xl border border-gray-100"
+                            />
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setProofTarget(order.id);
+                              fileInputRef.current?.click();
+                            }}
+                            disabled={uploading === order.id}
+                            className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-sm px-4 py-2.5 rounded-xl transition-colors w-full justify-center"
+                          >
+                            {uploading === order.id
+                              ? <span className="w-4 h-4 border-2 border-gray-400/40 border-t-gray-600 rounded-full animate-spin" />
+                              : <><Camera className="w-4 h-4" /> {tr("upload_proof")}</>
+                            }
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="flex gap-3">

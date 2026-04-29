@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Package, X, RefreshCw } from "lucide-react";
+import { Package, X, RefreshCw, Calculator } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 type Request = {
   id: string; fromCity: string; toCity: string;
   fromAddress: string; toAddress: string;
-  goodsType: string; weight: number;
+  goodsType: string; vehicleType: string; size: string;
+  weight: number; estimatedPrice: number | null;
   description: string | null; status: string;
   createdAt: string;
   client: { name: string; phone: string };
@@ -21,6 +22,11 @@ const goodsKeyMap: Record<string, string> = {
 };
 
 const AUTO_REFRESH = 30;
+
+const sizeKeyMap: Record<string, string> = {
+  small: "size_small", medium: "size_medium",
+  large: "size_large", extra_large: "size_extra_large",
+};
 
 export default function BrowsePage() {
   const { tr } = useLanguage();
@@ -77,6 +83,11 @@ export default function BrowsePage() {
   const goodsLabel = (type: string) => {
     const key = goodsKeyMap[type] as Parameters<typeof tr>[0] | undefined;
     return key ? tr(key) : type;
+  };
+
+  const sizeLabel = (size: string) => {
+    const key = sizeKeyMap[size] as Parameters<typeof tr>[0] | undefined;
+    return key ? tr(key) : size;
   };
 
   const timeOptions = [
@@ -147,11 +158,19 @@ export default function BrowsePage() {
                           {req.fromCity} ← {req.toCity}
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          {goodsLabel(req.goodsType)} · {req.weight} {tr("kg_suffix")}
+                          {goodsLabel(req.goodsType)} · {req.weight} {tr("kg_suffix")} · {sizeLabel(req.size || "medium")}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5 truncate">
                           {req.fromAddress} ← {req.toAddress}
                         </p>
+                        {req.estimatedPrice && (
+                          <div className="flex items-center gap-1 mt-1.5">
+                            <Calculator className="w-3 h-3 text-orange-400" />
+                            <span className="text-xs text-orange-600 font-semibold">
+                              ~{req.estimatedPrice.toLocaleString()} {tr("dz_suffix")}
+                            </span>
+                          </div>
+                        )}
                         {req.description && (
                           <p className="text-xs text-gray-500 mt-1.5 bg-gray-50 rounded-lg px-2.5 py-1.5 line-clamp-2">
                             {req.description}

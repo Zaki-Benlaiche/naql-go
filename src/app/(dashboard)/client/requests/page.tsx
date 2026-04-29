@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle, Star } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 type Bid = {
@@ -15,15 +15,95 @@ type Request = {
   goodsType: string; weight: number;
   description: string | null; status: string;
   createdAt: string; bids: Bid[];
+  rating: { score: number } | null;
 };
 
 const statusColors: Record<string, string> = {
-  OPEN:      "bg-blue-100 text-blue-700",
-  ACCEPTED:  "bg-green-100 text-green-700",
-  IN_TRANSIT:"bg-orange-100 text-orange-700",
-  DELIVERED: "bg-gray-100 text-gray-600",
-  CANCELLED: "bg-red-100 text-red-600",
+  OPEN:       "bg-blue-100 text-blue-700",
+  ACCEPTED:   "bg-green-100 text-green-700",
+  IN_TRANSIT: "bg-orange-100 text-orange-700",
+  DELIVERED:  "bg-gray-100 text-gray-600",
+  CANCELLED:  "bg-red-100 text-red-600",
 };
+
+function StarRating({
+  requestId, existingScore, onRated,
+}: { requestId: string; existingScore: number | null; onRated: () => void }) {
+  const { lang, tr } = useLanguage();
+  const [hovered, setHovered] = useState(0);
+  const [selected, setSelected] = useState(existingScore ?? 0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(!!existingScore);
+
+  if (done) {
+    return (
+      <div className="flex items-center gap-1.5 mt-3">
+        {[1,2,3,4,5].map(i => (
+          <Star key={i} className={`w-4 h-4 ${i <= selected ? "fill-orange-400 text-orange-400" : "text-gray-200"}`} />
+        ))}
+        <span className="text-xs text-gray-500 ms-1">{tr("rating_submitted")}</span>
+      </div>
+    );
+  }
+
+  async function submit() {
+    if (!selected) return;
+    setSubmitting(true);
+    const res = await fetch("/api/ratings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requestId, score: selected, comment }),
+    });
+    setSubmitting(false);
+    if (res.ok) { setDone(true); onRated(); }
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100">
+      <p className="text-xs font-semibold text-gray-600 mb-2">{tr("rate_transporter")}</p>
+      <div className="flex items-center gap-1 mb-2">
+        {[1,2,3,4,5].map(i => (
+          <button
+            key={i}
+            type="button"
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(0)}
+            onClick={() => setSelected(i)}
+            className="p-0.5"
+          >
+            <Star className={`w-7 h-7 transition-colors ${
+              i <= (hovered || selected)
+                ? "fill-orange-400 text-orange-400"
+                : "text-gray-200 hover:text-orange-300"
+            }`} />
+          </button>
+        ))}
+      </div>
+      {selected > 0 && (
+        <>
+          <textarea
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            placeholder={tr("rating_comment_placeholder")}
+            rows={2}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-orange-300 mb-2"
+          />
+          <button
+            onClick={submit}
+            disabled={submitting}
+            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-xs font-semibold py-2 rounded-xl transition-colors"
+          >
+            {submitting
+              ? <span className="flex items-center justify-center gap-1.5"><span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" /></span>
+              : tr("submit_rating")
+            }
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function RequestsPage() {
   const { lang, tr } = useLanguage();
@@ -65,7 +145,6 @@ export default function RequestsPage() {
       } else {
         showToast("success", lang === "ar" ? "✅ تم قبول العرض بنجاح!" : "✅ Offre acceptée avec succès !");
         await load();
-        // auto-expand so user sees the accepted bid
         setExpanded(requestId);
       }
     } catch {
@@ -82,9 +161,7 @@ export default function RequestsPage() {
         {/* Toast notification */}
         {toast && (
           <div className={`fixed top-4 start-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium min-w-[260px] max-w-sm ${
-            toast.type === "success"
-              ? "bg-green-500 text-white"
-              : "bg-red-500 text-white"
+            toast.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
           }`}>
             {toast.type === "success"
               ? <CheckCircle className="w-4 h-4 shrink-0" />
@@ -181,11 +258,8 @@ export default function RequestsPage() {
                             const isAccepted = bid.status === "ACCEPTED";
                             return (
                               <div key={bid.id} className={`rounded-xl border transition-all ${
-                                isAccepted
-                                  ? "border-green-200 bg-green-50"
-                                  : "border-gray-100 bg-gray-50"
+                                isAccepted ? "border-green-200 bg-green-50" : "border-gray-100 bg-gray-50"
                               }`}>
-                                {/* Accepted banner */}
                                 {isAccepted && (
                                   <div className="flex items-center gap-2 px-4 py-2.5 bg-green-500 rounded-t-xl">
                                     <CheckCircle className="w-4 h-4 text-white" />
@@ -204,7 +278,6 @@ export default function RequestsPage() {
                                         {bid.note ? ` — ${bid.note}` : ""}
                                       </p>
 
-                                      {/* Phone always visible for accepted bid */}
                                       <a href={`tel:${bid.transporter.phone}`}
                                         className={`inline-flex items-center gap-1.5 text-xs font-medium mt-2 px-3 py-1.5 rounded-lg transition-colors ${
                                           isAccepted
@@ -214,6 +287,15 @@ export default function RequestsPage() {
                                         <Phone className="w-3 h-3" />
                                         {bid.transporter.phone}
                                       </a>
+
+                                      {/* Star rating — only for DELIVERED + accepted bid */}
+                                      {req.status === "DELIVERED" && isAccepted && (
+                                        <StarRating
+                                          requestId={req.id}
+                                          existingScore={req.rating?.score ?? null}
+                                          onRated={load}
+                                        />
+                                      )}
                                     </div>
 
                                     <div className="text-end shrink-0">
@@ -235,7 +317,7 @@ export default function RequestsPage() {
                                             }
                                           </button>
                                         )}
-                                        {isAccepted && (
+                                        {isAccepted && req.status !== "OPEN" && (
                                           <span className="bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-xl inline-block">
                                             {tr("accepted_badge")}
                                           </span>

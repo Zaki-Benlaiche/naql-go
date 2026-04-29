@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
     if (session.user.role === "CLIENT") {
       const requests = await prisma.transportRequest.findMany({
         where: { clientId: session.user.id, ...(status ? { status } : {}) },
-        include: { bids: { include: { transporter: { select: { name: true, phone: true } } } } },
+        include: {
+          bids: { include: { transporter: { select: { name: true, phone: true } } } },
+          rating: { select: { score: true } },
+        },
         orderBy: { createdAt: "desc" },
       });
       return NextResponse.json(requests);
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { fromCity, toCity, fromAddress, toAddress, goodsType, vehicleType, weight, description } = body;
+    const { fromCity, toCity, fromAddress, toAddress, goodsType, vehicleType, size, weight, description, estimatedPrice } = body;
 
     const request = await prisma.transportRequest.create({
       data: {
@@ -57,8 +60,10 @@ export async function POST(req: NextRequest) {
         fromCity, toCity, fromAddress, toAddress,
         goodsType,
         vehicleType: vehicleType || "any",
+        size: size || "medium",
         weight: parseFloat(weight),
         description: description || null,
+        estimatedPrice: estimatedPrice ? parseFloat(estimatedPrice) : null,
       },
     });
 

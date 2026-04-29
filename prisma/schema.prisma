@@ -13,12 +13,17 @@ model User {
   email     String?  @unique
   password  String
   role      String   // CLIENT | TRANSPORTER
+  isOnline  Boolean  @default(false)
+  avgRating Float?
+  totalRatings Int   @default(0)
   createdAt DateTime @default(now())
 
-  requests      TransportRequest[] @relation("ClientRequests")
-  bids          Bid[]
-  vehicles      Vehicle[]
-  notifications Notification[]
+  requests        TransportRequest[] @relation("ClientRequests")
+  bids            Bid[]
+  vehicles        Vehicle[]
+  notifications   Notification[]
+  ratingsGiven    Rating[]           @relation("RatingClient")
+  ratingsReceived Rating[]           @relation("RatingTransporter")
 
   @@map("users")
 }
@@ -49,13 +54,17 @@ model TransportRequest {
   goodsType     String
   vehicleType   String   @default("any")
   weight        Float
+  size          String   @default("medium")  // small | medium | large | extra_large
   description   String?
+  estimatedPrice Float?
 
-  status        String   @default("OPEN")
+  status           String   @default("OPEN")
+  proofOfDelivery  String?  // base64 image
 
   bids          Bid[]
   acceptedBidId String?  @unique
   acceptedBid   Bid?     @relation("AcceptedBid", fields: [acceptedBidId], references: [id])
+  rating        Rating?
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -82,6 +91,21 @@ model Bid {
 
   @@unique([requestId, transporterId])
   @@map("bids")
+}
+
+model Rating {
+  id            String   @id @default(cuid())
+  requestId     String   @unique
+  request       TransportRequest @relation(fields: [requestId], references: [id])
+  clientId      String
+  client        User     @relation("RatingClient", fields: [clientId], references: [id])
+  transporterId String
+  transporter   User     @relation("RatingTransporter", fields: [transporterId], references: [id])
+  score         Int      // 1-5
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  @@map("ratings")
 }
 
 model Notification {

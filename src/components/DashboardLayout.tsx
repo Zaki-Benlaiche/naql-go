@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Truck, LogOut, LayoutDashboard, PlusCircle, List, Globe, Menu, X, Bell, Package } from "lucide-react";
+import { Truck, LogOut, LayoutDashboard, PlusCircle, List, Globe, Menu, X, Bell, Package, Wifi, WifiOff } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +13,32 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { lang, setLang, tr } = useLanguage();
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(false);
+  const [togglingStatus, setTogglingStatus] = useState(false);
+
+  useEffect(() => {
+    if (!isClient) {
+      fetch("/api/profile/status")
+        .then(r => r.json())
+        .then(d => { if (typeof d.isOnline === "boolean") setIsOnline(d.isOnline); })
+        .catch(() => {});
+    }
+  }, [isClient]);
+
+  async function toggleOnline() {
+    setTogglingStatus(true);
+    const next = !isOnline;
+    try {
+      const res = await fetch("/api/profile/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isOnline: next }),
+      });
+      if (res.ok) setIsOnline(next);
+    } finally {
+      setTogglingStatus(false);
+    }
+  }
 
   useEffect(() => {
     async function fetchUnread() {
@@ -136,6 +162,27 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
         {/* Bottom actions */}
         <div className="px-3 pb-6 pt-3 border-t border-gray-100 space-y-0.5 shrink-0">
+          {/* Online/Offline toggle — transporter only */}
+          {!isClient && (
+            <button
+              onClick={toggleOnline}
+              disabled={togglingStatus}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-colors ${
+                isOnline
+                  ? "bg-green-50 text-green-700 hover:bg-green-100"
+                  : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              {isOnline
+                ? <Wifi className="w-4 h-4 shrink-0" />
+                : <WifiOff className="w-4 h-4 shrink-0" />
+              }
+              {isOnline ? tr("go_offline") : tr("go_online")}
+              {isOnline && (
+                <span className="ms-auto w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
+              )}
+            </button>
+          )}
           <button
             onClick={() => setLang(lang === "ar" ? "fr" : "ar")}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 w-full transition-colors"

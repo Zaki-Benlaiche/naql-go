@@ -164,6 +164,38 @@ export const t = {
     vt_crane: "رافعة",
     vt_taxi: "سيارة أجرة",
 
+    // Size
+    size_section: "حجم الشحنة",
+    size_small: "صغير",
+    size_medium: "متوسط",
+    size_large: "كبير",
+    size_extra_large: "كبير جداً",
+
+    // Price estimate
+    price_estimate: "تقدير السعر",
+    distance_label: "المسافة التقريبية",
+    price_range: "نطاق السعر المتوقع",
+    km_suffix: "كم",
+
+    // Online/Offline
+    go_online: "متاح الآن",
+    go_offline: "غير متاح",
+    status_online: "أنت متاح للطلبات",
+    status_offline: "أنت غير متاح",
+
+    // Rating
+    rate_transporter: "قيّم الناقل",
+    rating_submitted: "شكراً! تم تسجيل تقييمك",
+    rating_already: "لقد قيّمت هذا الطلب مسبقاً",
+    rating_comment_placeholder: "تعليق اختياري...",
+    submit_rating: "إرسال التقييم",
+
+    // Proof of delivery
+    proof_of_delivery: "إثبات التسليم",
+    upload_proof: "رفع صورة التسليم",
+    proof_uploaded: "✅ تم رفع صورة التسليم",
+    proof_hint: "التقط صورة للبضاعة عند التسليم",
+
     // Orders (transporter view)
     my_orders: "طلباتي المقبولة",
     no_orders: "لا توجد طلبات مقبولة بعد",
@@ -387,6 +419,38 @@ export const t = {
     vt_offroad: "4×4",
     vt_crane: "Grue",
     vt_taxi: "Taxi / Berline",
+
+    // Size
+    size_section: "Taille de la cargaison",
+    size_small: "Petit",
+    size_medium: "Moyen",
+    size_large: "Grand",
+    size_extra_large: "Très grand",
+
+    // Price estimate
+    price_estimate: "Estimation du prix",
+    distance_label: "Distance approximative",
+    price_range: "Fourchette de prix estimée",
+    km_suffix: "km",
+
+    // Online/Offline
+    go_online: "Disponible",
+    go_offline: "Indisponible",
+    status_online: "Vous êtes disponible pour des commandes",
+    status_offline: "Vous êtes indisponible",
+
+    // Rating
+    rate_transporter: "Évaluer le transporteur",
+    rating_submitted: "Merci ! Votre avis a été enregistré",
+    rating_already: "Vous avez déjà évalué cette commande",
+    rating_comment_placeholder: "Commentaire facultatif...",
+    submit_rating: "Envoyer l'évaluation",
+
+    // Proof of delivery
+    proof_of_delivery: "Preuve de livraison",
+    upload_proof: "Télécharger une photo",
+    proof_uploaded: "✅ Photo de livraison téléchargée",
+    proof_hint: "Prenez une photo de la marchandise à la livraison",
 
     // Orders (transporter view)
     my_orders: "Mes commandes acceptées",

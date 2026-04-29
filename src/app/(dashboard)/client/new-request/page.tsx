@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, Calculator } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
+import { calcPrice } from "@/lib/pricing";
 
 const wilayas = [
   "أدرار","الشلف","الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار",
@@ -25,7 +26,7 @@ export default function NewRequestPage() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     fromCity: "", toCity: "", fromAddress: "", toAddress: "",
-    goodsType: "", vehicleType: "any", weight: "", description: "",
+    goodsType: "", vehicleType: "any", size: "medium", weight: "", description: "",
   });
 
   const goodsTypes = [
@@ -38,21 +39,35 @@ export default function NewRequestPage() {
   ];
 
   const vehicleTypes = [
-    { value: "any",         label: tr("vt_any"),         icon: "🚗" },
-    { value: "pickup",      label: tr("vt_pickup"),      icon: "🛻" },
-    { value: "van",         label: tr("vt_van"),         icon: "🚐" },
-    { value: "light_truck", label: tr("vt_light_truck"), icon: "🚛" },
-    { value: "heavy_truck", label: tr("vt_heavy_truck"), icon: "🚚" },
-    { value: "refrigerated",label: tr("vt_refrigerated"),icon: "🧊" },
-    { value: "flatbed",     label: tr("vt_flatbed"),     icon: "🏗️" },
-    { value: "offroad",     label: tr("vt_offroad"),     icon: "🚙" },
-    { value: "crane",       label: tr("vt_crane"),       icon: "🏗️" },
-    { value: "taxi",        label: tr("vt_taxi"),        icon: "🚕" },
+    { value: "any",          label: tr("vt_any"),          icon: "🚗" },
+    { value: "pickup",       label: tr("vt_pickup"),       icon: "🛻" },
+    { value: "van",          label: tr("vt_van"),          icon: "🚐" },
+    { value: "light_truck",  label: tr("vt_light_truck"),  icon: "🚛" },
+    { value: "heavy_truck",  label: tr("vt_heavy_truck"),  icon: "🚚" },
+    { value: "refrigerated", label: tr("vt_refrigerated"), icon: "🧊" },
+    { value: "flatbed",      label: tr("vt_flatbed"),      icon: "🏗️" },
+    { value: "offroad",      label: tr("vt_offroad"),      icon: "🚙" },
+    { value: "crane",        label: tr("vt_crane"),        icon: "🏗️" },
+    { value: "taxi",         label: tr("vt_taxi"),         icon: "🚕" },
+  ];
+
+  const sizes = [
+    { value: "small",       label: tr("size_small"),       icon: "📦" },
+    { value: "medium",      label: tr("size_medium"),      icon: "📦" },
+    { value: "large",       label: tr("size_large"),       icon: "📦" },
+    { value: "extra_large", label: tr("size_extra_large"), icon: "📦" },
   ];
 
   function set(key: string, value: string) {
     setForm(prev => ({ ...prev, [key]: value }));
   }
+
+  // Live price estimate
+  const priceEstimate = useMemo(() => {
+    const w = parseFloat(form.weight);
+    if (!form.fromCity || !form.toCity || !w || w <= 0 || form.fromCity === form.toCity) return null;
+    return calcPrice(form.fromCity, form.toCity, w, form.size);
+  }, [form.fromCity, form.toCity, form.weight, form.size]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,7 +75,10 @@ export default function NewRequestPage() {
     const res = await fetch("/api/requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        estimatedPrice: priceEstimate ? Math.round((priceEstimate.minPrice + priceEstimate.maxPrice) / 2) : null,
+      }),
     });
     const data = await res.json();
     setLoading(false);
@@ -138,10 +156,12 @@ export default function NewRequestPage() {
             </div>
           </div>
 
-          {/* Goods section */}
+          {/* Goods + size + weight section */}
           <div className="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
             <h2 className="font-bold text-gray-900 mb-4 text-sm md:text-base">{tr("goods_section")}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 mb-4">
+
+            {/* Goods type */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 mb-5">
               {goodsTypes.map(g => (
                 <button key={g.value} type="button" onClick={() => set("goodsType", g.value)}
                   className={`p-2.5 md:p-3 rounded-xl border-2 text-xs md:text-sm text-center transition-all font-medium ${
@@ -154,11 +174,31 @@ export default function NewRequestPage() {
                 </button>
               ))}
             </div>
+
+            {/* Size */}
+            <p className="text-sm font-medium text-gray-700 mb-2">{tr("size_section")}</p>
+            <div className="grid grid-cols-4 gap-2 mb-5">
+              {sizes.map(s => (
+                <button key={s.value} type="button" onClick={() => set("size", s.value)}
+                  className={`py-2.5 px-2 rounded-xl border-2 text-xs text-center transition-all font-medium ${
+                    form.size === s.value
+                      ? "border-orange-500 bg-orange-50 text-orange-700"
+                      : "border-gray-200 hover:border-gray-300 text-gray-600"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Weight */}
             <div className="mb-4">
               <label className={labelClass}>{tr("weight_label")}</label>
               <input type="number" value={form.weight} onChange={e => set("weight", e.target.value)}
                 placeholder={tr("weight_placeholder")} min="1" className={inputClass} required />
             </div>
+
+            {/* Description */}
             <div>
               <label className={labelClass}>
                 {tr("description_label")} <span className="text-gray-400 font-normal">{tr("description_optional")}</span>
@@ -168,6 +208,30 @@ export default function NewRequestPage() {
                 className={`${inputClass} resize-none`} />
             </div>
           </div>
+
+          {/* Price estimate card */}
+          {priceEstimate && (
+            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 md:p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Calculator className="w-4 h-4 text-orange-500" />
+                <span className="font-bold text-orange-700 text-sm">{tr("price_estimate")}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white rounded-xl px-3 py-2.5">
+                  <p className="text-xs text-gray-400 font-medium mb-0.5">{tr("distance_label")}</p>
+                  <p className="font-bold text-gray-900 text-sm">
+                    {priceEstimate.distanceKm.toLocaleString()} {tr("km_suffix")}
+                  </p>
+                </div>
+                <div className="bg-white rounded-xl px-3 py-2.5">
+                  <p className="text-xs text-gray-400 font-medium mb-0.5">{tr("price_range")}</p>
+                  <p className="font-bold text-orange-600 text-sm">
+                    {priceEstimate.minPrice.toLocaleString()} – {priceEstimate.maxPrice.toLocaleString()} {tr("dz_suffix")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">{error}</div>
