@@ -1,14 +1,71 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #f97316;
-  --primary-dark: #ea580c;
+  --navy-950: #060E1F;
+  --navy-900: #0A1628;
+  --navy-800: #112240;
+  --navy-700: #1A3458;
+  --blue-600: #1D4ED8;
+  --blue-500: #3B82F6;
+  --orange-600: #EA580C;
+  --orange-500: #F97316;
+  --orange-400: #FB923C;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   font-family: var(--font-geist), "Segoe UI", Arial, sans-serif;
+  background: #F0F5FF;
 }
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, #F97316 0%, #EF4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glowing orange button */
+.btn-primary {
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.35);
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  box-shadow: 0 6px 28px rgba(249, 115, 22, 0.50);
+  transform: translateY(-1px);
+}
+
+/* Card with premium shadow */
+.card-premium {
+  background: white;
+  border: 1px solid rgba(203, 213, 255, 0.4);
+  box-shadow: 0 2px 24px rgba(15, 23, 42, 0.07), 0 1px 4px rgba(15, 23, 42, 0.04);
+  border-radius: 1.25rem;
+}
+
+/* Sidebar nav active glow */
+.nav-active {
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.30);
+}
+
+/* Animated gradient background */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-gradient {
+  background: linear-gradient(-45deg, #0A1628, #112240, #1A3458, #0F2044);
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.2); border-radius: 10px; }
