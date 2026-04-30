@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useSmartPoll } from "@/hooks/useSmartPoll";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Package, Phone, Truck, CheckCircle, MapPin, Camera, Zap } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -58,12 +59,21 @@ export default function TransporterOrdersPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [proofTarget, setProofTarget] = useState<string | null>(null);
 
-  async function load() {
-    const res = await fetch("/api/orders");
-    if (res.ok) setOrders(await res.json());
-    setLoading(false);
-  }
-  useEffect(() => { load(); }, []);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const res = await fetch("/api/orders");
+      if (res.ok) setOrders(await res.json());
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // 3 s for active orders (client may update), 12 s otherwise
+  const hasActive = orders.some(o => ["OPEN", "ACCEPTED", "IN_TRANSIT"].includes(o.status));
+  useSmartPoll(() => load(true), hasActive ? 3000 : 12000);
 
   function showToast(msg: string) {
     setToast(msg);

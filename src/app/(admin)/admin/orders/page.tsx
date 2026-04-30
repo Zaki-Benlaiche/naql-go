@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Package, ArrowLeft, Truck, Phone } from "lucide-react";
+import { useSmartPoll } from "@/hooks/useSmartPoll";
 
 type Order = {
   id: string; fromCity: string; toCity: string;
@@ -30,15 +31,21 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
-  async function load(status: string) {
-    setLoading(true);
+  const load = useCallback(async (status: string, silent = false) => {
+    if (!silent) setLoading(true);
     const params = status ? `?status=${status}` : "";
-    const res = await fetch(`/api/admin/orders${params}`);
-    if (res.ok) setOrders(await res.json());
-    setLoading(false);
-  }
+    try {
+      const res = await fetch(`/api/admin/orders${params}`);
+      if (res.ok) setOrders(await res.json());
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => { load(filter); }, [filter]);
+  useEffect(() => { load(filter); }, [filter, load]);
+
+  // Admin sees live updates every 5 s
+  useSmartPoll(() => load(filter, true), 5000);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">

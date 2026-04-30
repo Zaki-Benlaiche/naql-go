@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { useSmartPoll } from "@/hooks/useSmartPoll";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle, Star, XCircle, Trash2 } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -135,12 +136,21 @@ export default function RequestsPage() {
     return tr(`status_${s}` as Parameters<typeof tr>[0]);
   };
 
-  async function load() {
-    const res = await fetch("/api/requests");
-    setRequests(await res.json());
-    setLoading(false);
-  }
-  useEffect(() => { load(); }, []);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const res = await fetch("/api/requests");
+      if (res.ok) setRequests(await res.json());
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // 3 s when there's an active order, 12 s otherwise — pauses when tab is hidden
+  const hasActive = requests.some(r => ["ACCEPTED", "IN_TRANSIT"].includes(r.status));
+  useSmartPoll(() => load(true), hasActive ? 3000 : 12000);
 
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });

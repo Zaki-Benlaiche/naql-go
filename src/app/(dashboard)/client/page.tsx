@@ -1,11 +1,12 @@
 "use client";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { PlusCircle, Package, CheckCircle, Truck, ArrowRight, Clock } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useSmartPoll } from "@/hooks/useSmartPoll";
 
 type Request = {
   id: string; fromCity: string; toCity: string;
@@ -28,13 +29,24 @@ export default function ClientDashboard() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadRequests = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const res = await fetch("/api/requests");
+      if (res.ok) setRequests(await res.json());
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/login"); return; }
     if (status === "authenticated" && session.user.role !== "CLIENT") { router.push("/transporter"); return; }
-    if (status === "authenticated") {
-      fetch("/api/requests").then(r => r.json()).then(data => { setRequests(data); setLoading(false); });
-    }
-  }, [status, session, router]);
+    if (status === "authenticated") loadRequests();
+  }, [status, session, router, loadRequests]);
+
+  const hasActive = requests.some(r => ["ACCEPTED", "IN_TRANSIT"].includes(r.status));
+  useSmartPoll(() => loadRequests(true), hasActive ? 3000 : 12000);
 
   const open      = requests.filter(r => r.status === "OPEN").length;
   const accepted  = requests.filter(r => r.status === "ACCEPTED" || r.status === "IN_TRANSIT").length;
