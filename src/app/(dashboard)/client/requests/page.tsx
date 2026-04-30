@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useSmartPoll } from "@/hooks/useSmartPoll";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle, Star, XCircle, Trash2 } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle, Star, XCircle, Trash2, ArrowLeft } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -221,7 +222,12 @@ export default function RequestsPage() {
           </div>
         )}
 
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">{tr("requests_title")}</h1>
+        <div className="flex items-center gap-3 mb-6">
+          <Link href="/client" className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">{tr("requests_title")}</h1>
+        </div>
 
         {loading ? (
           <div className="text-center py-12 text-gray-400 text-sm">{tr("loading")}</div>
@@ -318,7 +324,7 @@ export default function RequestsPage() {
                     )}
 
                     {/* Cancel / Delete actions */}
-                    {(req.status === "OPEN" || req.status === "CANCELLED") && (
+                    {(req.status === "OPEN" || req.status === "CANCELLED" || req.status === "DELIVERED") && (
                       <div className="flex gap-2 mb-5">
                         {req.status === "OPEN" && (
                           <button

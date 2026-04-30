@@ -32,6 +32,26 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Add latest=true to get single most-recent unread notification
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+
+    const id = req.nextUrl.searchParams.get("id");
+    if (id) {
+      await prisma.notification.deleteMany({ where: { id, userId: session.user.id } });
+    } else {
+      // Delete all read notifications
+      await prisma.notification.deleteMany({ where: { userId: session.user.id, read: true } });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[notifications DELETE]", error);
+    return NextResponse.json({ error: "خطأ في الخادم" }, { status: 500 });
+  }
+}
+
 export async function PATCH() {
   try {
     const session = await getServerSession(authOptions);

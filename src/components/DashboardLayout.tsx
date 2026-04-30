@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,6 +19,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOnline, setIsOnline] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [notifToast, setNotifToast] = useState<string | null>(null);
+  const prevCountRef = useRef(-1);
 
   useEffect(() => {
     if (!isClient) {
@@ -46,13 +48,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     async function fetchUnread() {
       try {
         const res = await fetch("/api/notifications?unread=true");
-        if (res.ok) { const d = await res.json(); setUnreadCount(d.count ?? 0); }
+        if (res.ok) {
+          const d = await res.json();
+          const count = d.count ?? 0;
+          if (prevCountRef.current >= 0 && count > prevCountRef.current) {
+            setNotifToast(lang === "ar" ? "لديك إشعار جديد 🔔" : "Nouvelle notification 🔔");
+            setTimeout(() => setNotifToast(null), 5000);
+          }
+          prevCountRef.current = count;
+          setUnreadCount(count);
+        }
       } catch {}
     }
     fetchUnread();
     const interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [lang]);
 
   const links = isClient
     ? [
@@ -207,6 +218,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </aside>
+
+      {/* Global new-notification toast */}
+      {notifToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300 min-w-[240px] max-w-xs">
+          <Bell className="w-4 h-4 text-orange-400 shrink-0" />
+          <span className="flex-1">{notifToast}</span>
+          <button onClick={() => setNotifToast(null)} className="text-white/40 hover:text-white transition-colors">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* ── Content ── */}
       <div className="flex-1 flex flex-col min-w-0">

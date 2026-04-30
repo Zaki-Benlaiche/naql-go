@@ -25,7 +25,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
-    if (!["OPEN", "CANCELLED"].includes(request.status)) {
+    if (!["OPEN", "CANCELLED", "DELIVERED"].includes(request.status)) {
       return NextResponse.json({ error: "لا يمكن حذف طلب قيد التنفيذ" }, { status: 400 });
     }
 

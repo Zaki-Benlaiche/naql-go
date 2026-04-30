@@ -297,6 +297,12 @@ export const t = {
     notif_bid_accepted: "تم قبول عرضك!",
     notif_in_transit: "الناقل في الطريق",
     notif_delivered: "تم تسليم بضاعتك",
+    delete_notification: "حذف",
+    notif_new_section: "جديدة",
+    notif_history: "السابقة",
+    delete_all_read: "حذف المقروءة",
+    new_notif_toast: "لديك إشعار جديد",
+    back: "رجوع",
 
     // Landing – steps
     step1_title: "انشر طلبك",
@@ -651,6 +657,12 @@ export const t = {
     notif_bid_accepted: "Votre offre a été acceptée !",
     notif_in_transit: "Le transporteur est en route",
     notif_delivered: "Votre marchandise a été livrée",
+    delete_notification: "Supprimer",
+    notif_new_section: "Nouvelles",
+    notif_history: "Historique",
+    delete_all_read: "Supprimer les lues",
+    new_notif_toast: "Nouvelle notification",
+    back: "Retour",
 
     // Landing – steps
     step1_title: "Publiez votre demande",
