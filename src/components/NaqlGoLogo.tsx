@@ -46,23 +46,28 @@ export function NaqlGoLogo({
           <rect x="6" y="6" width="188" height="188" rx="52"
             fill={`url(#${uid}_bg)`} filter={`url(#${uid}_ds)`} />
 
-          {/* ── Truck silhouette (white, single path) ──
+          {/* ── Truck icon (white stroke, outline style) ──
               Cab on LEFT (shorter), Cargo on RIGHT (taller).
-              M cab-bottom-left → up → round top-left → across cab → up to cargo → round cargo corners → down → close
+              Path: bottom-left → up left → round cab top-left → cab roof →
+                    step up to cargo → round cargo corners → down right side
           ── */}
           <path
-            d="M28,130 L28,88 Q28,76 42,76 L72,76 L72,48 Q72,36 84,36 L156,36 Q168,36 168,48 L168,130 Z"
-            fill="white"
-            fillOpacity="0.96"
+            d="M40,128 L40,92 Q40,78 54,78 L82,78 L82,59 Q82,45 96,45 L151,45 Q165,45 165,59 L165,128"
+            fill="none"
+            stroke="white"
+            strokeWidth="11"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
+          {/* Bottom undercarriage */}
+          <line x1="40" y1="128" x2="165" y2="128"
+            stroke="white" strokeWidth="11" strokeLinecap="round" />
 
-          {/* Wheel left */}
-          <circle cx="60"  cy="150" r="20" fill="white" fillOpacity="0.96" />
-          <circle cx="60"  cy="150" r="10" fill="#E05000" />
+          {/* Wheel left (under cab) */}
+          <circle cx="64"  cy="148" r="20" fill="white" fillOpacity="0.96" />
 
-          {/* Wheel right */}
-          <circle cx="150" cy="150" r="20" fill="white" fillOpacity="0.96" />
-          <circle cx="150" cy="150" r="10" fill="#E05000" />
+          {/* Wheel right (under cargo rear) */}
+          <circle cx="147" cy="148" r="20" fill="white" fillOpacity="0.96" />
         </svg>
       </div>
 
@@ -109,12 +114,15 @@ export function NaqlGoFavicon() {
   return (
     <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="4" y="4" width="192" height="192" rx="52" fill="#FF7020" />
-      <path d="M28,130 L28,88 Q28,76 42,76 L72,76 L72,48 Q72,36 84,36 L156,36 Q168,36 168,48 L168,130 Z"
-        fill="white" fillOpacity="0.96" />
-      <circle cx="60"  cy="150" r="20" fill="white" fillOpacity="0.96" />
-      <circle cx="60"  cy="150" r="10" fill="#E05000" />
-      <circle cx="150" cy="150" r="20" fill="white" fillOpacity="0.96" />
-      <circle cx="150" cy="150" r="10" fill="#E05000" />
+      <path
+        d="M40,128 L40,92 Q40,78 54,78 L82,78 L82,59 Q82,45 96,45 L151,45 Q165,45 165,59 L165,128"
+        fill="none" stroke="white" strokeWidth="11"
+        strokeLinecap="round" strokeLinejoin="round"
+      />
+      <line x1="40" y1="128" x2="165" y2="128"
+        stroke="white" strokeWidth="11" strokeLinecap="round" />
+      <circle cx="64"  cy="148" r="20" fill="white" fillOpacity="0.96" />
+      <circle cx="147" cy="148" r="20" fill="white" fillOpacity="0.96" />
     </svg>
   );
 }
