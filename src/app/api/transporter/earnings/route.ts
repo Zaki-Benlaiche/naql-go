@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const COMMISSION = 0.10; // 10 % admin fee per delivery
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -20,33 +22,47 @@ export async function GET() {
       },
       include: {
         request: {
-          select: { fromCity: true, toCity: true, createdAt: true, updatedAt: true },
+          select: { fromCity: true, toCity: true, updatedAt: true },
         },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    const totalEarned = deliveredBids.reduce((s, b) => s + b.price, 0);
-
-    const now = new Date();
+    const now         = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const thisMonthEarned = deliveredBids
-      .filter(b => new Date(b.createdAt) >= startOfMonth)
-      .reduce((s, b) => s + b.price, 0);
+
+    let totalGross = 0, thisMonthGross = 0;
+
+    for (const b of deliveredBids) {
+      totalGross += b.price;
+      if (new Date(b.createdAt) >= startOfMonth) thisMonthGross += b.price;
+    }
+
+    const totalAdminFee      = totalGross      * COMMISSION;
+    const totalNet           = totalGross      * (1 - COMMISSION);
+    const thisMonthAdminFee  = thisMonthGross  * COMMISSION;
+    const thisMonthNet       = thisMonthGross  * (1 - COMMISSION);
 
     const completedTrips = deliveredBids.length;
-    const avgPerTrip = completedTrips > 0 ? totalEarned / completedTrips : 0;
+    const avgNetPerTrip  = completedTrips > 0 ? totalNet / completedTrips : 0;
 
     return NextResponse.json({
-      totalEarned,
-      thisMonthEarned,
+      totalGross,
+      totalNet,
+      totalAdminFee,
+      thisMonthGross,
+      thisMonthNet,
+      thisMonthAdminFee,
       completedTrips,
-      avgPerTrip,
+      avgNetPerTrip,
+      commissionRate: COMMISSION,
       history: deliveredBids.map(b => ({
-        id: b.id,
-        price: b.price,
-        fromCity: b.request.fromCity,
-        toCity: b.request.toCity,
+        id:          b.id,
+        grossPrice:  b.price,
+        netPrice:    b.price * (1 - COMMISSION),
+        adminFee:    b.price * COMMISSION,
+        fromCity:    b.request.fromCity,
+        toCity:      b.request.toCity,
         deliveredAt: b.request.updatedAt,
       })),
     });

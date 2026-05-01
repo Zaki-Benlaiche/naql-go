@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LogOut, LayoutDashboard, PlusCircle, List, Globe,
   Menu, X, Bell, Package, Wifi, WifiOff, TrendingUp, FileText,
-  ChevronRight, UserCog, Sparkles,
+  ChevronRight, UserCog, Sparkles, DollarSign, Users,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
@@ -23,12 +23,15 @@ const iconColors: Record<string, string> = {
   "/transporter/earnings":   "#10B981",
   "/transporter/documents":  "#64748B",
   "/transporter/profile":    "#06B6D4",
+  "/admin/earnings":         "#F59E0B",
+  "/admin/users":            "#8B5CF6",
 };
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const isClient = session?.user?.role === "CLIENT";
+  const isClient      = session?.user?.role === "CLIENT";
+  const isAdmin       = session?.user?.role === "ADMIN";
   const { lang, setLang, tr } = useLanguage();
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -38,7 +41,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const prevCountRef = useRef(-1);
 
   useEffect(() => {
-    if (!isClient) {
+    if (!isClient && !isAdmin) {
       fetch("/api/profile/status")
         .then(r => r.json())
         .then(d => { if (typeof d.isOnline === "boolean") setIsOnline(d.isOnline); })
@@ -80,12 +83,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [lang]);
 
-  const links = isClient
+  const links = isAdmin
     ? [
-        { href: "/client",            label: tr("dashboard"),     icon: LayoutDashboard },
+        { href: "/admin/earnings", label: lang === "ar" ? "عمولاتي"    : "Mes commissions", icon: DollarSign },
+        { href: "/notifications",  label: tr("notifications"),                               icon: Bell },
+      ]
+    : isClient
+    ? [
+        { href: "/client",             label: tr("dashboard"),    icon: LayoutDashboard },
         { href: "/client/new-request", label: tr("new_request"),  icon: PlusCircle },
-        { href: "/client/requests",   label: tr("my_requests"),   icon: Package },
-        { href: "/notifications",     label: tr("notifications"),  icon: Bell },
+        { href: "/client/requests",    label: tr("my_requests"),  icon: Package },
+        { href: "/notifications",      label: tr("notifications"), icon: Bell },
       ]
     : [
         { href: "/transporter",           label: tr("dashboard"),        icon: LayoutDashboard },
