@@ -15,10 +15,12 @@ export const WILAYAS = [
 
 // INTRA vehicle types — value stored in DB for BOTH transporter profile and client request
 export const VEHICLE_TYPES = [
-  { value: "car",        icon: "🚗", labelAr: "سيارة",        labelFr: "Voiture",       descAr: "حتى 500 كغ",    descFr: "Jusqu'à 500 kg"   },
-  { value: "van",        icon: "🚐", labelAr: "فان",           labelFr: "Fourgonnette",  descAr: "500 كغ – 3 طن",  descFr: "500 kg – 3 T"     },
-  { value: "truck",      icon: "🚛", labelAr: "شاحنة",         labelFr: "Camion",        descAr: "3 طن فأكثر",     descFr: "3 T et plus"      },
-  { value: "motorcycle", icon: "🏍️", labelAr: "دراجة توصيل",  labelFr: "Moto livraison",descAr: "طرود صغيرة",    descFr: "Petits colis"     },
+  { value: "motorcycle",  icon: "🏍️", labelAr: "دراجة توصيل",  labelFr: "Moto livraison",  descAr: "طرود صغيرة – مع صندوق",     descFr: "Petits colis – avec caisse"        },
+  { value: "car",         icon: "🚗", labelAr: "سيارة كولي",    labelFr: "Voiture – Colis", descAr: "حتى 500 كغ",                 descFr: "Jusqu'à 500 kg"                    },
+  { value: "van",         icon: "🚐", labelAr: "فورغونيت",      labelFr: "Fourgonnette",    descAr: "أثاث، إلكترونيات، تنقل",    descFr: "Mobilier, électronique, déménag."  },
+  { value: "truck",       icon: "🚛", labelAr: "شاحنة",         labelFr: "Camion",          descAr: "مواد بناء – 3 طن فأكثر",    descFr: "Matériaux – 3 T et plus"           },
+  { value: "heavy_truck", icon: "🏗️", labelAr: "شاحنة ثقيلة",  labelFr: "Camion lourd",    descAr: "أحمال ثقيلة جداً",           descFr: "Très lourdes charges"              },
+  { value: "refrigerated",icon: "❄️", labelAr: "مبرد",          labelFr: "Réfrigéré",       descAr: "سلسلة التبريد – مواد غذائية",descFr: "Chaîne du froid – alimentaire"     },
 ] as const;
 
 export type VehicleTypeValue = typeof VEHICLE_TYPES[number]["value"];

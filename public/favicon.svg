@@ -1,20 +1,29 @@
 <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF6B00"/>
-      <stop offset="100%" stop-color="#E65100"/>
+      <stop offset="0%"   stop-color="#FF7A20"/>
+      <stop offset="100%" stop-color="#C94400"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <rect width="64" height="64" rx="14" fill="none" stroke="white" stroke-opacity="0.18" stroke-width="1.2"/>
-  <path d="M6 46V31c0-2 1.6-3.5 3.5-3.5h17V46H6z" fill="white" fill-opacity="0.95"/>
-  <rect x="26.5" y="22" width="23" height="24" rx="2.5" fill="white" fill-opacity="0.95"/>
-  <rect x="4" y="43" width="48" height="3.5" rx="1.8" fill="white" fill-opacity="0.9"/>
-  <circle cx="17" cy="51" r="6.5" fill="white" fill-opacity="0.95"/>
-  <circle cx="17" cy="51" r="4" fill="#E65100"/>
-  <circle cx="17" cy="51" r="1.6" fill="white"/>
-  <circle cx="45" cy="51" r="6.5" fill="white" fill-opacity="0.95"/>
-  <circle cx="45" cy="51" r="4" fill="#E65100"/>
-  <circle cx="45" cy="51" r="1.6" fill="white"/>
-  <path d="M46 14l8 0M54 14l-3.5-3.5M54 14l-3.5 3.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+  <!-- Background squircle -->
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <rect width="64" height="64" rx="16" fill="none" stroke="white" stroke-opacity="0.14" stroke-width="1.2"/>
+  <!-- Location pin (white): tip(32,53) → left-shoulder(20,37) → large CCW arc → right-shoulder(44,37) → close -->
+  <path d="M32,53 L20,37 A16,16 0 1 0 44,37 Z" fill="white" fill-opacity="0.97"/>
+  <!-- Cargo box -->
+  <rect x="25" y="19" width="20" height="12" rx="2" fill="#0D1F35"/>
+  <!-- Cab -->
+  <path d="M18,31 L18,23 Q18,20 21,20 L25,20 L25,31 Z" fill="#0D1F35"/>
+  <!-- Windshield (orange) -->
+  <rect x="19.5" y="22" width="4.5" height="4" rx="1" fill="#FF6B00" fill-opacity="0.9"/>
+  <!-- Wheel left -->
+  <circle cx="22" cy="34" r="3.5" fill="#0D1F35"/>
+  <circle cx="22" cy="34" r="1.4" fill="white" fill-opacity="0.85"/>
+  <!-- Wheel right -->
+  <circle cx="38" cy="34" r="3.5" fill="#0D1F35"/>
+  <circle cx="38" cy="34" r="1.4" fill="white" fill-opacity="0.85"/>
+  <!-- Speed lines -->
+  <line x1="4"  y1="26" x2="9"  y2="26" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.72"/>
+  <line x1="3"  y1="31" x2="8"  y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.48"/>
+  <line x1="4"  y1="36" x2="9"  y2="36" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.62"/>
 </svg>

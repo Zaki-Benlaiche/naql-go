@@ -19,10 +19,12 @@ type Profile = {
 const vehicleColors: Record<string, {
   selected: string; icon_bg: string; border: string; text: string; dot: string;
 }> = {
-  car:        { selected: "border-blue-400 bg-blue-50",    icon_bg: "bg-blue-100",   border: "border-blue-100",   text: "text-blue-700",   dot: "bg-blue-400"   },
-  van:        { selected: "border-green-400 bg-green-50",  icon_bg: "bg-green-100",  border: "border-green-100",  text: "text-green-700",  dot: "bg-green-400"  },
-  truck:      { selected: "border-orange-400 bg-orange-50",icon_bg: "bg-orange-100", border: "border-orange-100", text: "text-orange-700", dot: "bg-orange-400" },
-  motorcycle: { selected: "border-purple-400 bg-purple-50",icon_bg: "bg-purple-100", border: "border-purple-100", text: "text-purple-700", dot: "bg-purple-400" },
+  motorcycle:  { selected: "border-purple-400 bg-purple-50", icon_bg: "bg-purple-100", border: "border-purple-100", text: "text-purple-700", dot: "bg-purple-400" },
+  car:         { selected: "border-blue-400 bg-blue-50",     icon_bg: "bg-blue-100",   border: "border-blue-100",   text: "text-blue-700",   dot: "bg-blue-400"   },
+  van:         { selected: "border-green-400 bg-green-50",   icon_bg: "bg-green-100",  border: "border-green-100",  text: "text-green-700",  dot: "bg-green-400"  },
+  truck:       { selected: "border-orange-400 bg-orange-50", icon_bg: "bg-orange-100", border: "border-orange-100", text: "text-orange-700", dot: "bg-orange-400" },
+  heavy_truck: { selected: "border-amber-400 bg-amber-50",   icon_bg: "bg-amber-100",  border: "border-amber-100",  text: "text-amber-700",  dot: "bg-amber-400"  },
+  refrigerated:{ selected: "border-cyan-400 bg-cyan-50",     icon_bg: "bg-cyan-100",   border: "border-cyan-100",   text: "text-cyan-700",   dot: "bg-cyan-400"   },
 };
 
 export default function TransporterProfilePage() {
