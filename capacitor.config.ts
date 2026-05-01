@@ -5,16 +5,19 @@ const config: CapacitorConfig = {
   appName: "NaqlGo",
   webDir: "out",
 
-  // ⚠️ غيّر هذا الرابط إلى رابط النشر الفعلي على Vercel
+  // ── Self-contained APK ──
+  // Frontend is bundled inside the APK (from `out/`).
+  // API calls are routed to the Vercel backend via NEXT_PUBLIC_API_URL.
   server: {
-    url: "https://naql-go.vercel.app",
-    cleartext: true,
     androidScheme: "https",
+    hostname: "localhost",
+    cleartext: false,
     allowNavigation: [
       "naql-go.vercel.app",
       "naqlgo.vercel.app",
       "*.vercel.app",
       "*.openstreetmap.org",
+      "tile.openstreetmap.org",
       "unpkg.com",
       "nominatim.openstreetmap.org",
     ],
@@ -22,8 +25,9 @@ const config: CapacitorConfig = {
 
   android: {
     backgroundColor: "#0A1628",
-    allowMixedContent: true,
+    allowMixedContent: false,
     webContentsDebuggingEnabled: true,
+    captureInput: true,
   },
 
   plugins: {
