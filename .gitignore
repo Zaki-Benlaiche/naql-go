@@ -15,7 +15,9 @@
 
 # next.js
 /.next/
-/out/
+/out/*
+# Keep Capacitor APK offline fallback page
+!/out/index.html
 
 # production
 /build
