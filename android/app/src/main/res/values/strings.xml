@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NaqlGo</string>
+    <string name="title_activity_main">NaqlGo</string>
+    <string name="package_name">com.naqlgo.app</string>
+    <string name="custom_url_scheme">com.naqlgo.app</string>
+</resources>
