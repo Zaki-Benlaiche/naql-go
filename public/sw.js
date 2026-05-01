@@ -1,5 +1,5 @@
-const CACHE = "naqlgo-v1";
-const STATIC = ["/", "/login", "/register", "/manifest.json", "/favicon.svg"];
+const CACHE = "naqlgo-v2";
+const STATIC = ["/login", "/register", "/manifest.json", "/favicon.svg"];
 
 self.addEventListener("install", e => {
   e.waitUntil(

@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: "out",
   server: {
     // Your deployed Vercel URL — change this to your actual domain
-    url: "https://naqlgo.vercel.app",
+    url: "https://naql-go.vercel.app",
     cleartext: false,
   },
   android: {
