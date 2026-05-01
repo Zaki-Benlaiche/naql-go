@@ -1,0 +1,57 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#FF9040"/>
+      <stop offset="50%"  stop-color="#FF6500"/>
+      <stop offset="100%" stop-color="#C94400"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="10%" y1="0%" x2="55%" y2="70%">
+      <stop offset="0%"   stop-color="white" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background squircle -->
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <rect width="64" height="64" rx="15" fill="url(#gloss)"/>
+  <rect width="64" height="64" rx="15" fill="none" stroke="white" stroke-opacity="0.14" stroke-width="1"/>
+
+  <!-- Cargo container -->
+  <rect x="27" y="14" width="28" height="23" rx="3.5" fill="white" fill-opacity="0.96"/>
+  <!-- Cargo door line -->
+  <line x1="41" y1="14" x2="41" y2="37" stroke="#FF6500" stroke-width="1" stroke-opacity="0.12"/>
+  <line x1="27" y1="25.5" x2="55" y2="25.5" stroke="#FF6500" stroke-width="1" stroke-opacity="0.12"/>
+
+  <!-- Cab body -->
+  <path d="M8 37 L8 23 Q8 19.5 11.5 19.5 L27 19.5 L27 37 Z" fill="white" fill-opacity="0.96"/>
+
+  <!-- Windshield -->
+  <rect x="9.5" y="22" width="14" height="9" rx="2.5" fill="#2563EB" fill-opacity="0.26"/>
+  <!-- Windshield glare -->
+  <line x1="11" y1="24" x2="14.5" y2="24" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.5"/>
+
+  <!-- Headlight -->
+  <rect x="5.5" y="25.5" width="3" height="5.5" rx="1.5" fill="white" fill-opacity="0.9"/>
+
+  <!-- Bumper -->
+  <rect x="5" y="34" width="54" height="3.5" rx="1.8" fill="white" fill-opacity="0.92"/>
+
+  <!-- Front wheel -->
+  <circle cx="18" cy="43.5" r="6.5" fill="white" fill-opacity="0.95"/>
+  <circle cx="18" cy="43.5" r="4"   fill="#B83A00"/>
+  <circle cx="18" cy="43.5" r="1.7" fill="white" fill-opacity="0.9"/>
+
+  <!-- Rear wheel -->
+  <circle cx="46" cy="43.5" r="6.5" fill="white" fill-opacity="0.95"/>
+  <circle cx="46" cy="43.5" r="4"   fill="#B83A00"/>
+  <circle cx="46" cy="43.5" r="1.7" fill="white" fill-opacity="0.9"/>
+
+  <!-- Speed lines (left) -->
+  <line x1="1"   y1="23.5" x2="6"   y2="23.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-opacity="0.65"/>
+  <line x1="0"   y1="28"   x2="5.5" y2="28"   stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-opacity="0.45"/>
+  <line x1="1"   y1="32.5" x2="6"   y2="32.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-opacity="0.55"/>
+
+  <!-- Forward arrow (top-right) -->
+  <line x1="48" y1="9" x2="57" y2="9" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-opacity="0.88"/>
+  <path d="M53 5.5 L57 9 L53 12.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-opacity="0.88"/>
+</svg>

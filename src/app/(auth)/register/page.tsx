@@ -3,8 +3,9 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { Truck, Package, Globe } from "lucide-react";
+import { Truck, Package, Globe, Shield, User, Phone, Mail, Lock } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { NaqlGoLogo } from "@/components/NaqlGoLogo";
 
 function RegisterForm() {
   const router = useRouter();
@@ -36,12 +37,13 @@ function RegisterForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg-page)" }}>
       {/* Language toggle – top corner */}
-      <div className="fixed top-4 end-4">
+      <div className="fixed top-4 end-4 z-10">
         <button
           onClick={() => setLang(lang === "ar" ? "fr" : "ar")}
-          className="flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-orange-300 hover:text-orange-500 transition-colors shadow-sm"
+          className="flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-xl border bg-white text-slate-600 hover:border-[#FF6B00] hover:text-[#FF6B00] transition-all"
+          style={{ borderColor: "var(--border-light)", boxShadow: "var(--shadow-sm)" }}
         >
           <Globe className="w-4 h-4" />
           {lang === "ar" ? "FR" : "AR"}
@@ -51,94 +53,107 @@ function RegisterForm() {
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-6">
-          <Link href="/" className="inline-flex items-center gap-2 mb-5">
-            <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center shadow-md">
-              <Truck className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900">NaqlGo</span>
+          <Link href="/" className="inline-block mb-5 hover:opacity-90 transition-opacity">
+            <NaqlGoLogo size="lg" />
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">{tr("create_account")}</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>{tr("create_account")}</h1>
         </div>
 
         {/* Role selector */}
         <div className="grid grid-cols-2 gap-3 mb-5">
           {[
-            { value: "CLIENT", label: tr("role_client"), sub: tr("role_client_sub"), icon: Package },
-            { value: "TRANSPORTER", label: tr("role_transporter"), sub: tr("role_transporter_sub"), icon: Truck },
-          ].map(({ value, label, sub, icon: Icon }) => (
+            { value: "CLIENT", label: tr("role_client"), sub: tr("role_client_sub"), icon: Package, color: "#FF6B00" },
+            { value: "TRANSPORTER", label: tr("role_transporter"), sub: tr("role_transporter_sub"), icon: Truck, color: "#2563EB" },
+          ].map(({ value, label, sub, icon: Icon, color }) => (
             <button
               key={value}
               type="button"
               onClick={() => setRole(value as "CLIENT" | "TRANSPORTER")}
-              className={`p-4 rounded-2xl border-2 text-center transition-all ${
+              className={`p-4 rounded-2xl border-2 text-center transition-all group ${
                 role === value
-                  ? "border-orange-500 bg-orange-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
+                  ? "border-[#FF6B00] bg-[#FFF7ED]"
+                  : "border-slate-200 bg-white hover:border-slate-300"
               }`}
+              style={role === value ? { boxShadow: "0 4px 16px rgba(255,107,0,0.12)" } : {}}
             >
-              <Icon className={`w-6 h-6 mx-auto mb-2 ${role === value ? "text-orange-500" : "text-gray-400"}`} />
-              <p className={`font-semibold text-sm ${role === value ? "text-orange-600" : "text-gray-600"}`}>
+              <div className={`w-10 h-10 mx-auto mb-2 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                role === value ? "bg-[#FF6B00]/10" : "bg-slate-100"
+              }`}>
+                <Icon className="w-5 h-5" style={{ color: role === value ? color : "#94A3B8" }} />
+              </div>
+              <p className={`font-semibold text-sm ${role === value ? "text-[#FF6B00]" : "text-slate-600"}`}>
                 {label}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
             </button>
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
+        <div className="card-premium p-7" style={{ boxShadow: "var(--shadow-xl)" }}>
           <form onSubmit={handleSubmit} className="space-y-4">
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">{tr("full_name")}</label>
+              <label className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                <User className="w-3.5 h-3.5 text-[#64748B]" />
+                {tr("full_name")}
+              </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={tr("name_placeholder")}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent transition"
+                className="w-full input-premium"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">{tr("phone_label")}</label>
+              <label className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                <Phone className="w-3.5 h-3.5 text-[#64748B]" />
+                {tr("phone_label")}
+              </label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="05XXXXXXXX"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent transition"
+                className="w-full input-premium"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">
-                {tr("email_label")} <span className="text-gray-400 font-normal text-xs">{tr("email_optional")}</span>
+              <label className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                <Mail className="w-3.5 h-3.5 text-[#64748B]" />
+                {tr("email_label")} <span className="text-slate-400 font-normal text-xs">{tr("email_optional")}</span>
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={tr("email_placeholder")}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent transition"
+                className="w-full input-premium"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">{tr("password_label")}</label>
+              <label className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                <Lock className="w-3.5 h-3.5 text-[#64748B]" />
+                {tr("password_label")}
+              </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={tr("password_min")}
                 minLength={8}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent transition"
+                className="w-full input-premium"
                 required
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">
+              <div className="flex items-center gap-2 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">
+                <Shield className="w-4 h-4 shrink-0" />
                 {error}
               </div>
             )}
@@ -146,16 +161,19 @@ function RegisterForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-3 rounded-xl transition-colors text-sm shadow-sm mt-1"
+              className="w-full btn-primary disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 mt-1"
             >
-              {loading ? tr("creating") : tr("create_btn")}
+              {loading
+                ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {tr("creating")}</>
+                : tr("create_btn")
+              }
             </button>
           </form>
         </div>
 
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <p className="text-center text-sm mt-6" style={{ color: "var(--text-secondary)" }}>
           {tr("have_account")}{" "}
-          <Link href="/login" className="text-orange-500 font-semibold hover:underline">
+          <Link href="/login" className="text-[#FF6B00] font-semibold hover:text-[#E65100] transition-colors">
             {tr("login_link")}
           </Link>
         </p>

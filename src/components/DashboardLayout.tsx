@@ -4,11 +4,26 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Truck, LogOut, LayoutDashboard, PlusCircle, List, Globe,
+  LogOut, LayoutDashboard, PlusCircle, List, Globe,
   Menu, X, Bell, Package, Wifi, WifiOff, TrendingUp, FileText,
-  ChevronRight, Zap, UserCog,
+  ChevronRight, UserCog, Sparkles,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { NaqlGoLogo } from "@/components/NaqlGoLogo";
+
+// Icon color mapping for each nav item
+const iconColors: Record<string, string> = {
+  "/client":             "#FF6B00",
+  "/client/new-request": "#2563EB",
+  "/client/requests":    "#8B5CF6",
+  "/notifications":      "#F59E0B",
+  "/transporter":            "#FF6B00",
+  "/transporter/browse":     "#2563EB",
+  "/transporter/orders":     "#8B5CF6",
+  "/transporter/earnings":   "#10B981",
+  "/transporter/documents":  "#64748B",
+  "/transporter/profile":    "#06B6D4",
+};
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
@@ -86,7 +101,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const hiddenTransform = lang === "ar" ? "translate-x-full" : "-translate-x-full";
 
   return (
-    <div className="min-h-screen bg-[#F0F5FF] md:flex">
+    <div className="min-h-screen md:flex" style={{ background: "var(--bg-page)" }}>
 
       {/* Backdrop */}
       {open && (
@@ -110,19 +125,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
           {/* Brand */}
           <div className="px-5 py-5 flex items-center justify-between shrink-0">
-            <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
-              <div className="w-9 h-9 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
-                <Truck className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <span className="font-bold text-white text-lg tracking-tight">NaqlGo</span>
-                <div className="flex items-center gap-1 -mt-0.5">
-                  <Zap className="w-2.5 h-2.5 text-orange-400" />
-                  <span className="text-[10px] text-orange-400 font-medium tracking-wider uppercase">
-                    {lang === "ar" ? "نقل سريع" : "Transport"}
-                  </span>
-                </div>
-              </div>
+            <Link href="/" className="hover:opacity-90 transition-opacity" onClick={() => setOpen(false)}>
+              <NaqlGoLogo size="md" dark />
             </Link>
             <button onClick={() => setOpen(false)}
               className="md:hidden p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors">
@@ -131,14 +135,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* User card */}
-          <div className="mx-4 mb-4 shrink-0">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-4 py-3.5 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shrink-0">
+          <div className="mx-4 mb-5 shrink-0">
+            <div className="card-glass px-4 py-3.5 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B00] to-[#E65100] flex items-center justify-center text-white font-bold text-sm shadow-lg shrink-0">
                 {initial}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-white text-sm truncate">{session?.user?.name}</p>
-                <p className="text-xs text-orange-300 font-medium mt-0.5">
+                <p className="text-xs font-medium mt-0.5" style={{ color: "rgba(255,107,0,0.8)" }}>
                   {isClient ? tr("client_label") : tr("transporter_label")}
                 </p>
               </div>
@@ -155,6 +159,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {links.map((link) => {
                 const active = pathname === link.href;
                 const isNotif = link.href === "/notifications";
+                const iconColor = iconColors[link.href] || "#FF6B00";
                 return (
                   <Link
                     key={link.href}
@@ -167,9 +172,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     }`}
                   >
                     <span className="relative shrink-0">
-                      <link.icon className={`w-4 h-4 ${active ? "text-white" : ""}`} />
+                      <link.icon
+                        className="w-4 h-4"
+                        style={active ? { color: "white" } : { color: iconColor }}
+                      />
                       {isNotif && unreadCount > 0 && (
-                        <span className="absolute -top-1.5 -end-1.5 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                        <span className="absolute -top-1.5 -end-1.5 w-4 h-4 bg-[#EF4444] text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
                           {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                       )}
@@ -206,7 +214,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
             <button onClick={() => setLang(lang === "ar" ? "fr" : "ar")}
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/8 w-full transition-all">
-              <Globe className="w-4 h-4 shrink-0" />
+              <Globe className="w-4 h-4 shrink-0 text-[#06B6D4]" />
               {lang === "ar" ? "Français" : "العربية"}
             </button>
 
@@ -221,8 +229,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* Global new-notification toast */}
       {notifToast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300 min-w-[240px] max-w-xs">
-          <Bell className="w-4 h-4 text-orange-400 shrink-0" />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 bg-[#0F172A] text-white text-sm font-medium px-5 py-3 rounded-2xl min-w-[240px] max-w-xs animate-slide-up"
+          style={{ boxShadow: "0 8px 32px rgba(15,23,42,0.3)" }}>
+          <div className="w-8 h-8 rounded-lg bg-[#FF6B00]/20 flex items-center justify-center shrink-0">
+            <Bell className="w-4 h-4 text-[#FF6B00]" />
+          </div>
           <span className="flex-1">{notifToast}</span>
           <button onClick={() => setNotifToast(null)} className="text-white/40 hover:text-white transition-colors">
             <X className="w-3.5 h-3.5" />
@@ -234,24 +245,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Mobile header */}
-        <header className="md:hidden bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center shadow-sm">
-              <Truck className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-slate-900 text-sm">NaqlGo</span>
+        <header className="md:hidden bg-white/90 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center justify-between sticky top-0 z-30"
+          style={{ boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+          <Link href="/" className="hover:opacity-90 transition-opacity">
+            <NaqlGoLogo size="xs" />
           </Link>
           <div className="flex items-center gap-2">
             <Link href="/notifications" onClick={() => setUnreadCount(0)}
               className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 transition-colors">
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 end-1.5 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute top-1 end-1 w-4 h-4 bg-[#EF4444] text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </Link>
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#FF6B00] to-[#E65100] flex items-center justify-center text-white font-bold text-xs shadow-sm">
               {initial}
             </div>
             <button onClick={() => setOpen(true)}

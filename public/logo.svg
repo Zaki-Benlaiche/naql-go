@@ -1,0 +1,101 @@
+<svg viewBox="0 0 280 88" fill="none" xmlns="http://www.w3.org/2000/svg" width="280" height="88">
+  <defs>
+    <linearGradient id="lbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#FF9040"/>
+      <stop offset="45%"  stop-color="#FF6500"/>
+      <stop offset="100%" stop-color="#C94400"/>
+    </linearGradient>
+    <linearGradient id="lgloss" x1="10%" y1="0%" x2="55%" y2="75%">
+      <stop offset="0%"   stop-color="white" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="lrim" x1="0%" y1="0%" stop-color="#FF7A1A">
+      <stop offset="0%"   stop-color="#FF7A1A"/>
+      <stop offset="100%" stop-color="#B83A00"/>
+    </linearGradient>
+    <linearGradient id="ltxt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#FF8A3D"/>
+      <stop offset="55%"  stop-color="#FF6500"/>
+      <stop offset="100%" stop-color="#C94400"/>
+    </linearGradient>
+    <filter id="lds" x="-20%" y="-15%" width="140%" height="145%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#B83A00" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+
+  <!-- ── ICON (left, 72×72, centered at y=8 to y=80) ── -->
+  <rect x="4" y="8" width="72" height="72" rx="20" fill="url(#lbg)" filter="url(#lds)"/>
+  <rect x="4" y="8" width="72" height="72" rx="20" fill="url(#lgloss)"/>
+  <rect x="4" y="8" width="72" height="72" rx="20" fill="none" stroke="white" stroke-opacity="0.13" stroke-width="1"/>
+
+  <!-- Cargo -->
+  <rect x="34" y="21" width="33" height="26" rx="4" fill="white" fill-opacity="0.96"/>
+  <line x1="50.5" y1="21" x2="50.5" y2="47" stroke="#FF6500" stroke-width="1" stroke-opacity="0.11"/>
+  <line x1="34"   y1="34" x2="67"   y2="34" stroke="#FF6500" stroke-width="1" stroke-opacity="0.11"/>
+
+  <!-- Cab -->
+  <path d="M10 47 L10 29 Q10 25 13 25 L34 25 L34 47 Z" fill="white" fill-opacity="0.96"/>
+
+  <!-- Windshield -->
+  <rect x="12" y="28" width="17" height="10" rx="2.5" fill="#2563EB" fill-opacity="0.26"/>
+  <line x1="13.5" y1="30" x2="17.5" y2="30" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.5"/>
+
+  <!-- Headlight -->
+  <rect x="7" y="31.5" width="3.5" height="6" rx="1.8" fill="white" fill-opacity="0.9"/>
+
+  <!-- Bumper -->
+  <rect x="6" y="44.5" width="62" height="3.5" rx="1.8" fill="white" fill-opacity="0.92"/>
+
+  <!-- Front wheel -->
+  <circle cx="21"  cy="54" r="7.5" fill="white" fill-opacity="0.95"/>
+  <circle cx="21"  cy="54" r="4.8" fill="#B83A00"/>
+  <circle cx="21"  cy="54" r="2"   fill="white" fill-opacity="0.9"/>
+
+  <!-- Rear wheel -->
+  <circle cx="56"  cy="54" r="7.5" fill="white" fill-opacity="0.95"/>
+  <circle cx="56"  cy="54" r="4.8" fill="#B83A00"/>
+  <circle cx="56"  cy="54" r="2"   fill="white" fill-opacity="0.9"/>
+
+  <!-- Speed lines -->
+  <line x1="4"  y1="30" x2="8"  y2="30" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-opacity="0.65"/>
+  <line x1="3"  y1="35" x2="7.5" y2="35" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-opacity="0.45"/>
+  <line x1="4"  y1="40" x2="8"  y2="40" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-opacity="0.55"/>
+
+  <!-- Forward arrow -->
+  <line x1="56" y1="17" x2="64" y2="17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-opacity="0.88"/>
+  <path d="M60 13.5 L64 17 L60 20.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-opacity="0.88"/>
+
+  <!-- ── TEXT (right side) ── -->
+
+  <!-- "Naql" — dark navy -->
+  <text
+    x="90" y="54"
+    font-family="'Segoe UI','Helvetica Neue','Arial',sans-serif"
+    font-weight="900"
+    font-size="32"
+    letter-spacing="-1"
+    fill="#0F172A"
+  >Naql</text>
+
+  <!-- "Go" — orange gradient (faked with orange solid since SVG text fill-gradient is complex) -->
+  <text
+    x="163" y="54"
+    font-family="'Segoe UI','Helvetica Neue','Arial',sans-serif"
+    font-weight="900"
+    font-size="32"
+    letter-spacing="-1"
+    fill="#FF6500"
+  >Go</text>
+
+  <!-- Tagline "نقل · شحن" -->
+  <text
+    x="91" y="69"
+    font-family="'Segoe UI','Tahoma','Arial',sans-serif"
+    font-weight="600"
+    font-size="10"
+    letter-spacing="2.5"
+    fill="#C94400"
+    fill-opacity="0.58"
+    direction="rtl"
+  >نقل · شحن</text>
+</svg>
