@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import {
-  Bell, CheckCheck, Truck, DollarSign, PackageCheck, Trash2, X, History,
+  Bell, CheckCheck, Truck, DollarSign, PackageCheck,
+  Trash2, X, History, AlertTriangle,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -16,35 +17,56 @@ type Notif = {
   requestId: string | null;
 };
 
-const typeIcon: Record<string, React.ReactNode> = {
-  new_bid:      <DollarSign className="w-4 h-4 text-blue-500" />,
-  bid_accepted: <CheckCheck className="w-4 h-4 text-green-500" />,
-  in_transit:   <Truck className="w-4 h-4 text-orange-500" />,
-  delivered:    <PackageCheck className="w-4 h-4 text-green-600" />,
+/* ── Type metadata ─────────────────────────────────────────────── */
+const typeMeta: Record<string, { icon: React.ReactNode; iconBg: string; accent: string }> = {
+  new_bid: {
+    icon:   <DollarSign  className="w-4 h-4 text-blue-500" />,
+    iconBg: "bg-blue-50",
+    accent: "border-l-blue-400",
+  },
+  bid_accepted: {
+    icon:   <CheckCheck  className="w-4 h-4 text-emerald-500" />,
+    iconBg: "bg-emerald-50",
+    accent: "border-l-emerald-400",
+  },
+  in_transit: {
+    icon:   <Truck       className="w-4 h-4 text-orange-500" />,
+    iconBg: "bg-orange-50",
+    accent: "border-l-orange-400",
+  },
+  delivered: {
+    icon:   <PackageCheck className="w-4 h-4 text-green-600" />,
+    iconBg: "bg-green-50",
+    accent: "border-l-green-500",
+  },
 };
 
-const typeBg: Record<string, string> = {
-  new_bid:      "bg-blue-50",
-  bid_accepted: "bg-green-50",
-  in_transit:   "bg-orange-50",
-  delivered:    "bg-green-50",
+const fallbackMeta = {
+  icon:   <Bell className="w-4 h-4 text-gray-400" />,
+  iconBg: "bg-gray-50",
+  accent: "border-l-gray-300",
 };
 
-function timeAgo(dateStr: string, lang: string): string {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (diff < 60)    return lang === "ar" ? "الآن"                        : "À l'instant";
-  if (diff < 3600)  return lang === "ar" ? `${Math.floor(diff / 60)} د`  : `Il y a ${Math.floor(diff / 60)} min`;
-  if (diff < 86400) return lang === "ar" ? `${Math.floor(diff / 3600)} س`: `Il y a ${Math.floor(diff / 3600)} h`;
-  return lang === "ar" ? `${Math.floor(diff / 86400)} ي` : `Il y a ${Math.floor(diff / 86400)} j`;
+/* ── Time formatting ───────────────────────────────────────────── */
+function formatTime(dateStr: string, lang: string): string {
+  const d    = new Date(dateStr);
+  const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (diff < 60)     return lang === "ar" ? "الآن"                              : "À l'instant";
+  if (diff < 3600)   return lang === "ar" ? `منذ ${Math.floor(diff / 60)} د`   : `Il y a ${Math.floor(diff / 60)} min`;
+  if (diff < 86400)  return lang === "ar" ? `منذ ${Math.floor(diff / 3600)} س` : `Il y a ${Math.floor(diff / 3600)} h`;
+  if (diff < 604800) return lang === "ar" ? `منذ ${Math.floor(diff / 86400)} ي`: `Il y a ${Math.floor(diff / 86400)} j`;
+  return d.toLocaleDateString(lang === "ar" ? "ar-DZ" : "fr-DZ", { day: "numeric", month: "short" });
 }
 
+/* ── Page ──────────────────────────────────────────────────────── */
 export default function NotificationsPage() {
   const { lang, tr } = useLanguage();
-  const [notifs, setNotifs]           = useState<Notif[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [marking, setMarking]         = useState(false);
-  const [deleting, setDeleting]       = useState<string | null>(null);
-  const [deletingAll, setDeletingAll] = useState(false);
+  const [notifs, setNotifs]             = useState<Notif[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [marking, setMarking]           = useState(false);
+  const [deleting, setDeleting]         = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearing, setClearing]         = useState(false);
 
   async function load() {
     const res = await fetch("/api/notifications");
@@ -54,8 +76,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     load();
-    // Mark all as read in background so badge resets
-    fetch("/api/notifications", { method: "PATCH" });
+    fetch("/api/notifications", { method: "PATCH" }); // mark all read silently
   }, []);
 
   async function markAllRead() {
@@ -65,18 +86,24 @@ export default function NotificationsPage() {
     setMarking(false);
   }
 
-  async function deleteNotif(id: string) {
+  async function deleteOne(id: string) {
     setDeleting(id);
     const res = await fetch(`/api/notifications?id=${id}`, { method: "DELETE" });
     if (res.ok) setNotifs(prev => prev.filter(n => n.id !== id));
     setDeleting(null);
   }
 
-  async function deleteAllRead() {
-    setDeletingAll(true);
+  async function clearHistory() {
+    if (!confirmClear) {
+      setConfirmClear(true);
+      setTimeout(() => setConfirmClear(false), 4000);
+      return;
+    }
+    setClearing(true);
     const res = await fetch("/api/notifications", { method: "DELETE" });
     if (res.ok) setNotifs(prev => prev.filter(n => !n.read));
-    setDeletingAll(false);
+    setClearing(false);
+    setConfirmClear(false);
   }
 
   const unread = notifs.filter(n => !n.read);
@@ -84,60 +111,84 @@ export default function NotificationsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-6">
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">{tr("notifications")}</h1>
-            {unread.length > 0 && (
-              <p className="text-sm text-orange-500 font-medium mt-0.5">
-                {unread.length} {lang === "ar" ? "غير مقروء" : "non lue(s)"}
-              </p>
-            )}
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center">
+              <Bell className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{tr("notifications")}</h1>
+              {unread.length > 0
+                ? <p className="text-xs text-orange-500 font-semibold mt-0.5">
+                    {unread.length} {lang === "ar" ? "غير مقروء" : "non lue(s)"}
+                  </p>
+                : <p className="text-xs text-gray-400 mt-0.5">
+                    {lang === "ar" ? "كل شيء مقروء" : "Tout est lu"}
+                  </p>
+              }
+            </div>
           </div>
+
           {unread.length > 0 && (
             <button
               onClick={markAllRead}
               disabled={marking}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 bg-white border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-xl transition-colors font-medium"
+              className="flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-gray-700 bg-white border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-xl transition-all disabled:opacity-50"
             >
-              <CheckCheck className="w-4 h-4" />
+              {marking
+                ? <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+                : <CheckCheck className="w-3.5 h-3.5" />
+              }
               {tr("mark_all_read")}
             </button>
           )}
         </div>
 
-        {loading ? (
+        {/* ── Loading ── */}
+        {loading && (
           <div className="space-y-2">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 h-20 animate-pulse" />
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 h-[72px] animate-pulse" />
             ))}
           </div>
-        ) : notifs.length === 0 ? (
-          <div className="text-center py-14 bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <Bell className="w-7 h-7 text-gray-300" />
-            </div>
-            <p className="text-gray-500 text-sm font-medium">{tr("no_notifications")}</p>
-          </div>
-        ) : (
-          <div className="space-y-5">
+        )}
 
+        {/* ── Empty ── */}
+        {!loading && notifs.length === 0 && (
+          <div className="flex flex-col items-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
+            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+              <Bell className="w-8 h-8 text-gray-200" />
+            </div>
+            <p className="text-gray-500 font-semibold text-sm">{tr("no_notifications")}</p>
+            <p className="text-gray-400 text-xs mt-1">
+              {lang === "ar" ? "ستظهر هنا إشعاراتك عند وصولها" : "Vos notifications apparaîtront ici"}
+            </p>
+          </div>
+        )}
+
+        {!loading && notifs.length > 0 && (
+          <>
             {/* ── Unread section ── */}
             {unread.length > 0 && (
-              <section>
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-                  <h2 className="text-xs font-bold text-orange-500 uppercase tracking-widest">
+              <section className="space-y-2">
+                <div className="flex items-center gap-2 px-1">
+                  <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse shrink-0" />
+                  <span className="text-xs font-bold text-orange-500 uppercase tracking-widest">
                     {tr("notif_new_section")}
-                  </h2>
+                  </span>
+                  <span className="ms-auto text-xs font-bold text-orange-400 bg-orange-50 px-2 py-0.5 rounded-full">
+                    {unread.length}
+                  </span>
                 </div>
-                <div className="space-y-2">
+
+                <div className="bg-white rounded-2xl border border-orange-100 shadow-sm overflow-hidden divide-y divide-orange-50">
                   {unread.map(n => (
-                    <NotifCard
+                    <NotifRow
                       key={n.id} n={n} lang={lang}
-                      deleting={deleting} onDelete={deleteNotif}
+                      deleting={deleting} onDelete={deleteOne}
                     />
                   ))}
                 </div>
@@ -146,84 +197,106 @@ export default function NotificationsPage() {
 
             {/* ── History section ── */}
             {read.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-2 px-1">
+              <section className="space-y-2">
+                {/* Section header */}
+                <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <History className="w-3.5 h-3.5 text-gray-400" />
-                    <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                       {tr("notif_history")}
-                    </h2>
+                    </span>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-semibold">
+                      {read.length}
+                    </span>
                   </div>
+
+                  {/* Delete all read button — two-step confirm */}
                   <button
-                    onClick={deleteAllRead}
-                    disabled={deletingAll}
-                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-500 font-medium disabled:opacity-50 transition-colors"
+                    onClick={clearHistory}
+                    disabled={clearing}
+                    className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50 ${
+                      confirmClear
+                        ? "bg-red-500 text-white border-red-500 hover:bg-red-600"
+                        : "bg-white text-red-400 border-red-200 hover:bg-red-50 hover:border-red-300"
+                    }`}
                   >
-                    {deletingAll
-                      ? <span className="w-3 h-3 border-2 border-red-300 border-t-red-500 rounded-full animate-spin" />
-                      : <Trash2 className="w-3 h-3" />
+                    {clearing
+                      ? <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      : confirmClear
+                        ? <AlertTriangle className="w-3 h-3" />
+                        : <Trash2 className="w-3 h-3" />
                     }
-                    {tr("delete_all_read")}
+                    {confirmClear
+                      ? (lang === "ar" ? "تأكيد الحذف" : "Confirmer ?")
+                      : tr("delete_all_read")
+                    }
                   </button>
                 </div>
-                <div className="space-y-2">
+
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
                   {read.map(n => (
-                    <NotifCard
+                    <NotifRow
                       key={n.id} n={n} lang={lang}
-                      deleting={deleting} onDelete={deleteNotif}
+                      deleting={deleting} onDelete={deleteOne}
                     />
                   ))}
                 </div>
               </section>
             )}
-          </div>
+          </>
         )}
       </div>
     </DashboardLayout>
   );
 }
 
-function NotifCard({
+/* ── Notification row ──────────────────────────────────────────── */
+function NotifRow({
   n, lang, deleting, onDelete,
 }: {
   n: Notif; lang: string;
   deleting: string | null;
   onDelete: (id: string) => void;
 }) {
-  const bg   = typeBg[n.type]   ?? "bg-gray-50";
-  const icon = typeIcon[n.type] ?? <Bell className="w-4 h-4 text-gray-400" />;
+  const meta   = typeMeta[n.type] ?? fallbackMeta;
+  const isNew  = !n.read;
+  const isBusy = deleting === n.id;
 
   return (
-    <div className={`group flex items-start gap-3 px-4 py-3.5 rounded-2xl border transition-all ${
-      n.read
-        ? "bg-white border-gray-100"
-        : "bg-orange-50/60 border-orange-100 shadow-sm"
+    <div className={`flex items-start gap-3 px-4 py-3.5 border-l-[3px] transition-colors hover:bg-gray-50/60 ${
+      isNew ? `${meta.accent} bg-orange-50/30` : "border-l-transparent"
     }`}>
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
-        {icon}
+      {/* Type icon */}
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${meta.iconBg}`}>
+        {meta.icon}
       </div>
 
+      {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-semibold leading-snug ${n.read ? "text-gray-700" : "text-gray-900"}`}>
-          {n.title}
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <p className={`text-sm leading-snug ${isNew ? "font-bold text-gray-900" : "font-semibold text-gray-700"}`}>
+            {n.title}
+          </p>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isNew && <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0 mt-1" />}
+            {/* Delete button — always visible */}
+            <button
+              onClick={() => onDelete(n.id)}
+              disabled={isBusy}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all disabled:opacity-40 shrink-0"
+              title={lang === "ar" ? "حذف" : "Supprimer"}
+            >
+              {isBusy
+                ? <span className="w-3 h-3 border-2 border-red-300 border-t-red-500 rounded-full animate-spin" />
+                : <X className="w-3.5 h-3.5" />
+              }
+            </button>
+          </div>
+        </div>
         <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{n.body}</p>
-        <p className="text-[10px] text-gray-400 mt-1">{timeAgo(n.createdAt, lang)}</p>
-      </div>
-
-      <div className="flex flex-col items-end gap-2 shrink-0">
-        {!n.read && <span className="w-2 h-2 rounded-full bg-orange-500" />}
-        <button
-          onClick={() => onDelete(n.id)}
-          disabled={deleting === n.id}
-          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all disabled:opacity-50"
-          title={lang === "ar" ? "حذف" : "Supprimer"}
-        >
-          {deleting === n.id
-            ? <span className="w-3 h-3 border-2 border-red-300 border-t-red-500 rounded-full animate-spin block" />
-            : <X className="w-3.5 h-3.5" />
-          }
-        </button>
+        <p className="text-[11px] text-gray-400 mt-1.5 font-medium">
+          {formatTime(n.createdAt, lang)}
+        </p>
       </div>
     </div>
   );
