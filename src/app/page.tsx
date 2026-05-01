@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   Package, Clock, Star, ArrowLeft, ArrowRight, CheckCircle, Menu, X, Globe,
   Truck, Sofa, HardHat, Thermometer, Container, Shield, MapPin, Zap,
-  Phone, Mail, ChevronRight, Sparkles,
+  Phone, Mail, ChevronRight, Sparkles, Download, Smartphone, Apple,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
@@ -263,6 +263,79 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Download App ── */}
+      <section className="py-16 md:py-24" style={{ background: "var(--bg-page)" }}>
+        <div className="max-w-5xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-10 md:mb-14">
+            <span className="badge badge-orange mb-4 inline-flex">
+              <Smartphone className="w-3 h-3" />
+              {lang === "ar" ? "حمّل التطبيق" : "Télécharger l'app"}
+            </span>
+            <h2 className="text-2xl md:text-4xl font-bold text-[#0F172A] mb-3">
+              {lang === "ar" ? "حمّل تطبيق NaqlGo على هاتفك" : "Téléchargez NaqlGo sur votre téléphone"}
+            </h2>
+            <p className="text-[#64748B] text-sm md:text-base max-w-lg mx-auto">
+              {lang === "ar"
+                ? "استمتع بتجربة أسرع وأسهل عبر التطبيق المخصص لهاتفك"
+                : "Profitez d'une expérience plus rapide et plus fluide avec l'app dédiée"}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Android — active */}
+            <a href="/naqlgo.apk" download="NaqlGo.apk"
+              className="group card-premium p-6 md:p-8 flex items-center gap-5 hover:border-[#FF6B00] hover:shadow-xl transition-all">
+              <div className="w-16 h-16 md:w-18 md:h-18 rounded-2xl bg-gradient-to-br from-[#FF6B00] to-[#E05000] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform shrink-0">
+                <Smartphone className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-1 min-w-0 text-start">
+                <div className="text-[10px] font-bold text-[#FF6B00] uppercase tracking-widest mb-1">
+                  {lang === "ar" ? "متوفر الآن" : "Disponible maintenant"}
+                </div>
+                <div className="text-lg md:text-xl font-bold text-[#0F172A] mb-0.5">
+                  {lang === "ar" ? "تنزيل لـ Android" : "Télécharger pour Android"}
+                </div>
+                <div className="text-xs md:text-sm text-[#64748B]">
+                  {lang === "ar" ? "ملف APK • 4 ميجابايت" : "Fichier APK • 4 Mo"}
+                </div>
+              </div>
+              <Download className="w-6 h-6 text-[#FF6B00] group-hover:scale-125 transition-transform shrink-0" />
+            </a>
+
+            {/* iOS — coming soon */}
+            <div className="card-premium p-6 md:p-8 flex items-center gap-5 opacity-60 cursor-not-allowed">
+              <div className="w-16 h-16 md:w-18 md:h-18 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-lg shrink-0">
+                <Apple className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-1 min-w-0 text-start">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                  {lang === "ar" ? "قريباً" : "Bientôt"}
+                </div>
+                <div className="text-lg md:text-xl font-bold text-[#0F172A] mb-0.5">
+                  {lang === "ar" ? "تنزيل لـ iPhone" : "Télécharger pour iPhone"}
+                </div>
+                <div className="text-xs md:text-sm text-[#64748B]">
+                  {lang === "ar" ? "App Store — قيد التطوير" : "App Store — en développement"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Install hint */}
+          <div className="mt-8 max-w-2xl mx-auto bg-amber-50 border border-amber-200 rounded-2xl p-4 md:p-5 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+              <Shield className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="text-xs md:text-sm text-amber-900 leading-relaxed">
+              <span className="font-bold">{lang === "ar" ? "تنبيه: " : "Note : "}</span>
+              {lang === "ar"
+                ? "بعد التنزيل، فعّل خيار «السماح بالتثبيت من مصادر غير معروفة» في إعدادات هاتفك ثم اضغط على الملف لبدء التثبيت."
+                : "Après le téléchargement, activez « Autoriser les sources inconnues » dans les paramètres de votre téléphone, puis appuyez sur le fichier pour l'installer."}
+            </div>
           </div>
         </div>
       </section>
