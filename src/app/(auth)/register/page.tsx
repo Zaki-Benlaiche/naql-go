@@ -25,15 +25,29 @@ function RegisterForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, phone, email, password, role }),
-    });
-    const data = await res.json();
-    if (!res.ok) { setError(data.error || tr("error_occurred")); setLoading(false); return; }
-    await signIn("credentials", { identifier: phone, password, redirect: false });
-    router.push("/dashboard");
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone, email, password, role }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || tr("error_occurred"));
+        setLoading(false);
+        return;
+      }
+      const result = await signIn("credentials", { identifier: phone, password, redirect: false });
+      if (result?.error) {
+        setError(lang === "ar" ? "تم إنشاء الحساب لكن تعذر تسجيل الدخول. حاول من صفحة الدخول." : "Compte créé mais connexion échouée. Essayez la page de connexion.");
+        setLoading(false);
+        return;
+      }
+      router.push("/dashboard");
+    } catch (err) {
+      setError(lang === "ar" ? `خطأ في الاتصال بالخادم: ${(err as Error).message}` : `Erreur réseau : ${(err as Error).message}`);
+      setLoading(false);
+    }
   }
 
   return (

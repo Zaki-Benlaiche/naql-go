@@ -20,10 +20,22 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const result = await signIn("credentials", { identifier, password, redirect: false });
-    setLoading(false);
-    if (result?.error) setError(tr("login_error"));
-    else router.push("/dashboard");
+    try {
+      const result = await signIn("credentials", { identifier, password, redirect: false });
+      setLoading(false);
+      if (!result) {
+        setError(lang === "ar" ? "تعذر الاتصال بالخادم" : "Impossible de joindre le serveur");
+        return;
+      }
+      if (result.error) {
+        setError(tr("login_error"));
+        return;
+      }
+      router.push("/dashboard");
+    } catch (err) {
+      setLoading(false);
+      setError(lang === "ar" ? `خطأ في الاتصال: ${(err as Error).message}` : `Erreur réseau : ${(err as Error).message}`);
+    }
   }
 
   return (
