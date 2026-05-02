@@ -53,7 +53,7 @@ export default function AdminOrdersPage() {
   }, []);
 
   useEffect(() => { load(filter); }, [filter, load]);
-  useSmartPoll(() => load(filter, true), 5000);
+  useSmartPoll(() => load(filter, true), 15000);
 
   async function confirmDelete() {
     if (!deleting) return;

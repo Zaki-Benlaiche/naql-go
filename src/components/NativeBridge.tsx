@@ -39,8 +39,9 @@ export function NativeBridge() {
       StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
       StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
 
-      // Hide splash once UI is ready
-      setTimeout(() => SplashScreen.hide().catch(() => {}), 300);
+      // Hide splash as soon as the UI is interactive (don't wait the full
+      // launchShowDuration; first paint already happened before we got here).
+      SplashScreen.hide().catch(() => {});
 
       // Hardware back button → router.back() or exit at root
       const backHandler = await App.addListener("backButton", ({ canGoBack }) => {

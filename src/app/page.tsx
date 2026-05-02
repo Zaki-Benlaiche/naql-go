@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   Package, Clock, Star, ArrowLeft, ArrowRight, CheckCircle, Menu, X, Globe,
   Truck, Sofa, HardHat, Thermometer, Container, Shield, MapPin, Zap,
-  Phone, Mail, ChevronRight, Sparkles, Download, Smartphone, Apple,
+  Phone, Mail, Sparkles, Download, Smartphone, Apple,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
@@ -300,7 +300,7 @@ export default function Home() {
                   {lang === "ar" ? "تنزيل لـ Android" : "Télécharger pour Android"}
                 </div>
                 <div className="text-xs md:text-sm text-[#64748B]">
-                  {lang === "ar" ? "ملف APK • v2.0.0 • 49 ميجابايت" : "APK • v2.0.0 • 49 Mo"}
+                  {lang === "ar" ? "ملف APK • v2.0.1 • 58 ميجابايت" : "APK • v2.0.1 • 58 Mo"}
                 </div>
               </div>
               <Download className="w-6 h-6 text-[#FF6B00] group-hover:scale-125 transition-transform shrink-0" />

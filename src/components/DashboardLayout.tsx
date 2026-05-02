@@ -79,8 +79,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       } catch {}
     }
     fetchUnread();
-    const interval = setInterval(fetchUnread, 10000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchUnread, 25000);
+    // Pause when tab is hidden — saves API calls when app is in background
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") fetchUnread();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [lang]);
 
   const links = isAdmin
