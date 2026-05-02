@@ -46,28 +46,21 @@ export function NaqlGoLogo({
           <rect x="6" y="6" width="188" height="188" rx="52"
             fill={`url(#${uid}_bg)`} filter={`url(#${uid}_ds)`} />
 
-          {/* ── Truck icon (white stroke, outline style) ──
-              Cab on LEFT (shorter), Cargo on RIGHT (taller).
-              Path: bottom-left → up left → round cab top-left → cab roof →
-                    step up to cargo → round cargo corners → down right side
-          ── */}
-          <path
-            d="M40,128 L40,92 Q40,78 54,78 L82,78 L82,59 Q82,45 96,45 L151,45 Q165,45 165,59 L165,128"
-            fill="none"
-            stroke="white"
-            strokeWidth="11"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Bottom undercarriage */}
-          <line x1="40" y1="128" x2="165" y2="128"
-            stroke="white" strokeWidth="11" strokeLinecap="round" />
-
-          {/* Wheel left (under cab) */}
-          <circle cx="64"  cy="148" r="20" fill="white" fillOpacity="0.96" />
-
-          {/* Wheel right (under cargo rear) */}
-          <circle cx="147" cy="148" r="20" fill="white" fillOpacity="0.96" />
+          {/* ── Filled delivery truck (cab + cargo + wheels) ── */}
+          {/* Cargo box (right, taller) */}
+          <path d="M85,55 L156,55 Q163,55 163,62 L163,135 L85,135 Z" fill="white" />
+          {/* Cab (left, lower, sloped front) */}
+          <path d="M44,86 L85,86 L85,135 L37,135 Q31,135 31,129 L31,98 Q31,86 42,86 Z" fill="white" />
+          {/* Cab window (orange = same as bg, reads as glass) */}
+          <path d="M40,93 L80,93 L80,108 L40,108 Q37,108 37,105 L37,96 Q37,93 40,93 Z" fill={`url(#${uid}_bg)`} />
+          {/* Cargo door divider line */}
+          <rect x="122" y="60" width="3" height="75" fill="#E05000" fillOpacity="0.18" />
+          {/* Front wheel */}
+          <circle cx="58"  cy="148" r="15" fill="white" />
+          <circle cx="58"  cy="148" r="5.5" fill={`url(#${uid}_bg)`} />
+          {/* Rear wheel */}
+          <circle cx="142" cy="148" r="15" fill="white" />
+          <circle cx="142" cy="148" r="5.5" fill={`url(#${uid}_bg)`} />
         </svg>
       </div>
 
@@ -114,15 +107,14 @@ export function NaqlGoFavicon() {
   return (
     <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="4" y="4" width="192" height="192" rx="52" fill="#FF7020" />
-      <path
-        d="M40,128 L40,92 Q40,78 54,78 L82,78 L82,59 Q82,45 96,45 L151,45 Q165,45 165,59 L165,128"
-        fill="none" stroke="white" strokeWidth="11"
-        strokeLinecap="round" strokeLinejoin="round"
-      />
-      <line x1="40" y1="128" x2="165" y2="128"
-        stroke="white" strokeWidth="11" strokeLinecap="round" />
-      <circle cx="64"  cy="148" r="20" fill="white" fillOpacity="0.96" />
-      <circle cx="147" cy="148" r="20" fill="white" fillOpacity="0.96" />
+      <path d="M85,55 L156,55 Q163,55 163,62 L163,135 L85,135 Z" fill="white" />
+      <path d="M44,86 L85,86 L85,135 L37,135 Q31,135 31,129 L31,98 Q31,86 42,86 Z" fill="white" />
+      <path d="M40,93 L80,93 L80,108 L40,108 Q37,108 37,105 L37,96 Q37,93 40,93 Z" fill="#FF7020" />
+      <rect x="122" y="60" width="3" height="75" fill="#E05000" fillOpacity="0.18" />
+      <circle cx="58"  cy="148" r="15" fill="white" />
+      <circle cx="58"  cy="148" r="5.5" fill="#FF7020" />
+      <circle cx="142" cy="148" r="15" fill="white" />
+      <circle cx="142" cy="148" r="5.5" fill="#FF7020" />
     </svg>
   );
 }

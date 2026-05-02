@@ -5,24 +5,40 @@
     android:viewportWidth="200"
     android:viewportHeight="200">
 
-    <!-- Truck cab+cargo outline -->
-    <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="11"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M40,128 L40,92 Q40,78 54,78 L82,78 L82,59 Q82,45 96,45 L151,45 Q165,45 165,59 L165,128" />
-
-    <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="11"
-        android:strokeLineCap="round"
-        android:pathData="M40,128 L165,128" />
-
+    <!-- Cargo box -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M64,148 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 z" />
+        android:pathData="M85,55 L156,55 Q163,55 163,62 L163,135 L85,135 Z" />
+
+    <!-- Cab -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M147,148 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 z" />
+        android:pathData="M44,86 L85,86 L85,135 L37,135 Q31,135 31,129 L31,98 Q31,86 42,86 Z" />
+
+    <!-- Cab window -->
+    <path
+        android:fillColor="#FF6B00"
+        android:pathData="M40,93 L80,93 L80,108 L40,108 Q37,108 37,105 L37,96 Q37,93 40,93 Z" />
+
+    <!-- Cargo door split -->
+    <path
+        android:fillColor="#FF6B00"
+        android:fillAlpha="0.18"
+        android:pathData="M122,60 L125,60 L125,135 L122,135 Z" />
+
+    <!-- Front wheel -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M58,148 m-15,0 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0 z" />
+    <path
+        android:fillColor="#FF6B00"
+        android:pathData="M58,148 m-5.5,0 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 z" />
+
+    <!-- Rear wheel -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M142,148 m-15,0 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0 z" />
+    <path
+        android:fillColor="#FF6B00"
+        android:pathData="M142,148 m-5.5,0 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 z" />
 </vector>

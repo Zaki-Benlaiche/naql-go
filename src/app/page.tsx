@@ -300,7 +300,7 @@ export default function Home() {
                   {lang === "ar" ? "تنزيل لـ Android" : "Télécharger pour Android"}
                 </div>
                 <div className="text-xs md:text-sm text-[#64748B]">
-                  {lang === "ar" ? "ملف APK • v1.1.1 • 22 ميجابايت" : "APK • v1.1.1 • 22 Mo"}
+                  {lang === "ar" ? "ملف APK • v1.2.0 • 26 ميجابايت" : "APK • v1.2.0 • 26 Mo"}
                 </div>
               </div>
               <Download className="w-6 h-6 text-[#FF6B00] group-hover:scale-125 transition-transform shrink-0" />

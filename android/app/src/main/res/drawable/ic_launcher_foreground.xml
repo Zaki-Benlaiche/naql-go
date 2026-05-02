@@ -1,35 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Adaptive icon canvas is 108x108dp; safe area is the central ~66dp.
-     Truck path mapped from logo viewBox 200x200 → centered at 54,54 with scale 0.36 -->
+<!-- Adaptive icon canvas: 108×108dp, central safe area ~66dp.
+     Side-view delivery truck: cab + cargo box + wheels with hubs.
+     The orange "window" cutout matches the background colour so it
+     reads as a glass slit on every icon mask shape. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <group android:translateX="39" android:translateY="36" android:scaleX="0.18" android:scaleY="0.18">
+    <!-- Cargo box (taller, right side, rounded top corners) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,30 L84,30 Q88,30 88,34 L88,68 L46,68 Z" />
 
-        <!-- Truck cab+cargo outline -->
-        <path
-            android:strokeColor="#FFFFFF"
-            android:strokeWidth="11"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:pathData="M40,128 L40,92 Q40,78 54,78 L82,78 L82,59 Q82,45 96,45 L151,45 Q165,45 165,59 L165,128" />
+    <!-- Cab (lower, left side, sloped front) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,46 L46,46 L46,68 L20,68 Q17,68 17,65 L17,52 Q17,46 23,46 Z" />
 
-        <!-- Bottom line -->
-        <path
-            android:strokeColor="#FFFFFF"
-            android:strokeWidth="11"
-            android:strokeLineCap="round"
-            android:pathData="M40,128 L165,128" />
+    <!-- Cab window (orange = same as background, reads as glass) -->
+    <path
+        android:fillColor="#FF6B00"
+        android:pathData="M22,50 L43,50 L43,58 L22,58 Q20,58 20,56 L20,52 Q20,50 22,50 Z" />
 
-        <!-- Wheels -->
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M64,148 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 z" />
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M147,148 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 z" />
-    </group>
+    <!-- Cargo door split line (subtle) -->
+    <path
+        android:fillColor="#FF6B00"
+        android:fillAlpha="0.18"
+        android:pathData="M66,33 L67.5,33 L67.5,68 L66,68 Z" />
+
+    <!-- Front wheel — white tyre -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,74 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 z" />
+    <!-- Front wheel — orange hub -->
+    <path
+        android:fillColor="#FF6B00"
+        android:pathData="M32,74 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 z" />
+
+    <!-- Rear wheel — white tyre -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M74,74 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 z" />
+    <!-- Rear wheel — orange hub -->
+    <path
+        android:fillColor="#FF6B00"
+        android:pathData="M74,74 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 z" />
 </vector>
