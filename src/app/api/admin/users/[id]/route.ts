@@ -50,76 +50,78 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Block delete if user is mid-flight on any active order.
-    const activeStatuses = ["ACCEPTED", "IN_TRANSIT"];
     const blockingAsClient = await prisma.transportRequest.count({
-      where: { clientId: id, status: { in: activeStatuses } },
+      where: { clientId: id, status: { in: ["ACCEPTED", "IN_TRANSIT"] } },
     });
-    const blockingAsTransporter = await prisma.bid.count({
-      where: { transporterId: id, acceptedRequest: { status: { in: activeStatuses } } },
+    // Active bids the user holds: count accepted requests whose acceptedBid belongs to this transporter.
+    const myAcceptedBidIds = await prisma.bid.findMany({
+      where: { transporterId: id },
+      select: { id: true },
     });
+    const myBidIdList = myAcceptedBidIds.map(b => b.id);
+    const blockingAsTransporter = myBidIdList.length === 0 ? 0 : await prisma.transportRequest.count({
+      where: {
+        acceptedBidId: { in: myBidIdList },
+        status: { in: ["ACCEPTED", "IN_TRANSIT"] },
+      },
+    });
+
     if (blockingAsClient + blockingAsTransporter > 0) {
       return NextResponse.json({
         error: "لا يمكن الحذف: لدى المستخدم طلبات نشطة. أنهِها أو ألغها أولاً.",
       }, { status: 409 });
     }
 
-    // Sequential cascade — NeonHTTP adapter doesn't support array $transaction,
-    // so we walk the dependency graph by hand and delete leaves first.
+    // ── Cascade delete via raw SQL ──
+    // Each $executeRaw is a single statement: NeonHTTP friendly (no implicit
+    // transaction wrapping that Prisma's high-level delete() can trigger
+    // on a model with many reverse relations).
 
-    // 1. Independent leaf relations
-    await prisma.notification.deleteMany({ where: { userId: id } });
-    await prisma.couponUse.deleteMany({ where: { userId: id } });
-    await prisma.document.deleteMany({ where: { transporterId: id } });
-    await prisma.vehicle.deleteMany({ where: { transporterId: id } });
-    await prisma.rating.deleteMany({
-      where: { OR: [{ clientId: id }, { transporterId: id }] },
-    });
+    // 1) Leaf relations
+    await prisma.$executeRaw`DELETE FROM notifications WHERE "userId" = ${id}`;
+    await prisma.$executeRaw`DELETE FROM coupon_uses  WHERE "userId" = ${id}`;
+    await prisma.$executeRaw`DELETE FROM documents    WHERE "transporterId" = ${id}`;
+    await prisma.$executeRaw`DELETE FROM vehicles     WHERE "transporterId" = ${id}`;
+    await prisma.$executeRaw`DELETE FROM ratings      WHERE "clientId" = ${id} OR "transporterId" = ${id}`;
 
-    // 2. Bids the user (transporter) placed on OTHER people's requests.
-    //    If any of those bids is the acceptedBid of a request, we must
-    //    unset acceptedBidId on that request first to drop the FK.
-    const myBids = await prisma.bid.findMany({
-      where: { transporterId: id },
-      select: { id: true },
-    });
-    const myBidIds = myBids.map(b => b.id);
-    if (myBidIds.length > 0) {
-      await prisma.transportRequest.updateMany({
-        where: { acceptedBidId: { in: myBidIds } },
-        data: { acceptedBidId: null },
-      });
-      await prisma.bid.deleteMany({ where: { id: { in: myBidIds } } });
-    }
+    // 2) Bids placed by this transporter on OTHER people's requests.
+    //    Detach acceptedBidId on any request pointing at one of those bids first.
+    await prisma.$executeRaw`
+      UPDATE transport_requests
+         SET "acceptedBidId" = NULL
+       WHERE "acceptedBidId" IN (SELECT id FROM bids WHERE "transporterId" = ${id})
+    `;
+    await prisma.$executeRaw`DELETE FROM bids WHERE "transporterId" = ${id}`;
 
-    // 3. Requests this user (client) created — wipe their entire subtree.
-    const myReqs = await prisma.transportRequest.findMany({
-      where: { clientId: id },
-      select: { id: true },
-    });
-    const reqIds = myReqs.map(r => r.id);
-    if (reqIds.length > 0) {
-      await prisma.message.deleteMany({ where: { requestId: { in: reqIds } } });
-      await prisma.locationTrack.deleteMany({ where: { requestId: { in: reqIds } } });
-      // Drop any rating still attached.
-      await prisma.rating.deleteMany({ where: { requestId: { in: reqIds } } });
-      // Detach acceptedBid before deleting bids so the unique relation drops.
-      await prisma.transportRequest.updateMany({
-        where: { id: { in: reqIds } },
-        data: { acceptedBidId: null },
-      });
-      await prisma.bid.deleteMany({ where: { requestId: { in: reqIds } } });
-      await prisma.transportRequest.deleteMany({ where: { id: { in: reqIds } } });
-    }
+    // 3) Wipe the entire subtree of every request this user (client) owns.
+    await prisma.$executeRaw`
+      DELETE FROM messages
+       WHERE "requestId" IN (SELECT id FROM transport_requests WHERE "clientId" = ${id})
+    `;
+    await prisma.$executeRaw`
+      DELETE FROM location_tracks
+       WHERE "requestId" IN (SELECT id FROM transport_requests WHERE "clientId" = ${id})
+    `;
+    await prisma.$executeRaw`
+      DELETE FROM ratings
+       WHERE "requestId" IN (SELECT id FROM transport_requests WHERE "clientId" = ${id})
+    `;
+    await prisma.$executeRaw`
+      UPDATE transport_requests SET "acceptedBidId" = NULL WHERE "clientId" = ${id}
+    `;
+    await prisma.$executeRaw`
+      DELETE FROM bids
+       WHERE "requestId" IN (SELECT id FROM transport_requests WHERE "clientId" = ${id})
+    `;
+    await prisma.$executeRaw`DELETE FROM transport_requests WHERE "clientId" = ${id}`;
 
-    // 4. Detach this user from any direct (INTRA) requests where they
-    //    were the chosen transporter — keep the requests, drop the link.
-    await prisma.transportRequest.updateMany({
-      where: { assignedTransporterId: id },
-      data: { assignedTransporterId: null },
-    });
+    // 4) Detach as the chosen transporter on direct (INTRA) requests.
+    await prisma.$executeRaw`
+      UPDATE transport_requests SET "assignedTransporterId" = NULL WHERE "assignedTransporterId" = ${id}
+    `;
 
-    // 5. Finally, the user.
-    await prisma.user.delete({ where: { id } });
+    // 5) Finally, the user.
+    await prisma.$executeRaw`DELETE FROM users WHERE id = ${id}`;
 
     return NextResponse.json({ ok: true });
   } catch (error) {
