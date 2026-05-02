@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { SessionProvider } from "next-auth/react";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { NativeBridge } from "@/components/NativeBridge";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -52,7 +53,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionProvider basePath={basePath}>
-      <LanguageProvider>{children}</LanguageProvider>
+      <LanguageProvider>
+        <NativeBridge />
+        {children}
+      </LanguageProvider>
     </SessionProvider>
   );
 }

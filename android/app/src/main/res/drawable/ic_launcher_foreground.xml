@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive icon canvas is 108x108dp; safe area is the central ~66dp.
+     Truck path mapped from logo viewBox 200x200 → centered at 54,54 with scale 0.36 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group android:translateX="39" android:translateY="36" android:scaleX="0.18" android:scaleY="0.18">
+
+        <!-- Truck cab+cargo outline -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="11"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M40,128 L40,92 Q40,78 54,78 L82,78 L82,59 Q82,45 96,45 L151,45 Q165,45 165,59 L165,128" />
+
+        <!-- Bottom line -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="11"
+            android:strokeLineCap="round"
+            android:pathData="M40,128 L165,128" />
+
+        <!-- Wheels -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M64,148 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M147,148 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 z" />
+    </group>
+</vector>

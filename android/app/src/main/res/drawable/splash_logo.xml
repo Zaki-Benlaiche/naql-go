@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Truck cab+cargo outline -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M40,128 L40,92 Q40,78 54,78 L82,78 L82,59 Q82,45 96,45 L151,45 Q165,45 165,59 L165,128" />
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:pathData="M40,128 L165,128" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M64,148 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M147,148 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0 z" />
+</vector>
