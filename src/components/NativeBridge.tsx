@@ -34,8 +34,8 @@ export function NativeBridge() {
         import("@capacitor/network"),
       ]);
 
-      // Status bar — orange brand, light icons
-      StatusBar.setBackgroundColor({ color: "#E05000" }).catch(() => {});
+      // Status bar — match dark splash background, light icons
+      StatusBar.setBackgroundColor({ color: "#0A1628" }).catch(() => {});
       StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
       StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
 

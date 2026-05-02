@@ -23,7 +23,7 @@ export function NaqlGoLogo({
   return (
     <div className={`flex items-center ${className}`} style={{ gap: s.gap }}>
       <img
-        src="/logo-naql.png"
+        src="/logo2.png"
         alt="NaqlGo"
         width={s.icon}
         height={s.icon}

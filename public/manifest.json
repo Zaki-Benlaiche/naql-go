@@ -12,8 +12,8 @@
   "dir": "rtl",
   "categories": ["business", "logistics", "transportation"],
   "icons": [
-    { "src": "/logo-naql.png", "sizes": "1254x1254", "type": "image/png", "purpose": "any" },
-    { "src": "/logo-naql.png", "sizes": "1254x1254", "type": "image/png", "purpose": "maskable" },
+    { "src": "/logo2.png", "sizes": "1254x1254", "type": "image/png", "purpose": "any" },
+    { "src": "/logo2.png", "sizes": "1254x1254", "type": "image/png", "purpose": "maskable" },
     { "src": "/favicon.svg",   "sizes": "any",       "type": "image/svg+xml" }
   ],
   "shortcuts": [

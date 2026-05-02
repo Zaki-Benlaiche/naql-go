@@ -25,11 +25,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/logo-naql.png", type: "image/png", sizes: "1254x1254" },
+      { url: "/logo2.png", type: "image/png", sizes: "1254x1254" },
       { url: "/favicon.svg", type: "image/svg+xml" },
       { url: "/favicon.ico" },
     ],
-    apple: "/logo-naql.png",
+    apple: "/logo2.png",
   },
   openGraph: {
     title: "NaqlGo — منصة النقل والشحن في الجزائر",

@@ -11,7 +11,8 @@
     "cap:sync": "npx cap sync android",
     "cap:open": "npx cap open android",
     "cap:run": "npx cap run android",
-    "build:apk": "node scripts/build-apk.mjs"
+    "build:apk": "node scripts/build-apk.mjs",
+    "create:admin": "node scripts/create-admin.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.1",
