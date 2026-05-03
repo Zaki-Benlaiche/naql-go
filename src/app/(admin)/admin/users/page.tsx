@@ -9,9 +9,15 @@ import { useLanguage } from "@/context/LanguageContext";
 type User = {
   id: string; name: string; phone: string; email: string | null;
   role: string; isActive: boolean; isOnline: boolean;
+  wilaya: string | null;
+  vehicleType: string | null;
+  vehicleColor: string | null;
+  isLivreur: boolean; isFrodeur: boolean; isTransporteur: boolean;
   avgRating: number | null; totalRatings: number; createdAt: string;
   _count: { requests: number; bids: number };
 };
+
+type UsersResponse = { users: User[]; total: number; page: number; pageSize: number };
 
 const roleBg: Record<string, string> = {
   CLIENT: "bg-blue-100 text-blue-700",
@@ -48,6 +54,8 @@ export default function AdminUsersPage() {
   const { lang } = useLanguage();
   const ar = lang === "ar";
   const [users, setUsers] = useState<User[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage]   = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
@@ -56,17 +64,23 @@ export default function AdminUsersPage() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (p = 1) => {
     setLoading(true);
     const params = new URLSearchParams();
     if (role) params.set("role", role);
     if (search) params.set("q", search);
+    params.set("page", String(p));
     const res = await fetch(`/api/admin/users?${params}`);
-    if (res.ok) setUsers(await res.json());
+    if (res.ok) {
+      const data: UsersResponse = await res.json();
+      setUsers(data.users);
+      setTotal(data.total);
+      setPage(data.page);
+    }
     setLoading(false);
   }, [role, search]);
 
-  useEffect(() => { load(); }, [role, load]);
+  useEffect(() => { load(1); }, [role, load]);
 
   async function toggleActive(userId: string, current: boolean) {
     setToggling(userId);
@@ -114,7 +128,9 @@ export default function AdminUsersPage() {
             {ar ? "المستخدمون" : "Utilisateurs"}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {ar ? `${clientCount} عميل • ${transporterCount} ناقل` : `${clientCount} clients • ${transporterCount} transporteurs`}
+            {ar
+              ? `${total.toLocaleString("ar-DZ")} مستخدم إجمالاً • ${clientCount} عميل، ${transporterCount} ناقل في هذه الصفحة`
+              : `${total.toLocaleString("fr-DZ")} utilisateurs • ${clientCount} clients, ${transporterCount} transporteurs sur cette page`}
           </p>
         </div>
       </div>
@@ -263,6 +279,31 @@ export default function AdminUsersPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && total > 50 && (
+        <div className="flex items-center justify-between gap-3 bg-white rounded-2xl border border-gray-100 px-4 py-3 shadow-sm">
+          <button
+            onClick={() => load(page - 1)}
+            disabled={page <= 1}
+            className="px-4 py-2 text-xs font-bold rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {ar ? "← السابق" : "← Précédent"}
+          </button>
+          <p className="text-xs text-gray-500 font-medium">
+            {ar
+              ? `صفحة ${page} من ${Math.ceil(total / 50)}`
+              : `Page ${page} / ${Math.ceil(total / 50)}`}
+          </p>
+          <button
+            onClick={() => load(page + 1)}
+            disabled={page >= Math.ceil(total / 50)}
+            className="px-4 py-2 text-xs font-bold rounded-lg bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {ar ? "التالي →" : "Suivant →"}
+          </button>
         </div>
       )}
 

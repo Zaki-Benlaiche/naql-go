@@ -7,7 +7,7 @@ import { WILAYAS } from "@/lib/constants";
 import {
   ArrowRight, ArrowLeft, MapPin, Star,
   CheckCircle, ChevronDown, WifiOff, RefreshCw, Truck,
-  Bike, CarTaxiFront,
+  CarTaxiFront,
 } from "lucide-react";
 
 type ServiceCategory = "LIVREUR" | "FRODEUR" | "TRANSPORTEUR";
@@ -175,22 +175,25 @@ export default function NewRequestPage() {
 
   const services = [
     {
-      key: "LIVREUR" as const, icon: Bike, accent: "purple",
+      key: "LIVREUR" as const, emoji: "🛵", accent: "purple",
       titleAr: "موصِّل", titleFr: "Livreur",
-      descAr: "توصيل طرود ومشتريات صغيرة", descFr: "Livraison de petits colis",
-      gradFrom: "from-purple-500", gradTo: "to-purple-700",
+      descAr: "توصيل طرود ومشتريات سريعة", descFr: "Livraison rapide de colis",
+      gradFrom: "from-violet-500", gradTo: "to-purple-700",
+      tagAr: "سريع",  tagFr: "Rapide",
     },
     {
-      key: "FRODEUR" as const, icon: CarTaxiFront, accent: "yellow",
+      key: "FRODEUR" as const, emoji: "🚖", accent: "yellow",
       titleAr: "أجرة", titleFr: "Taxi (Frodeur)",
-      descAr: "نقل الأشخاص — السائق يحدد السعر", descFr: "Transport de personnes — le chauffeur fixe le prix",
-      gradFrom: "from-yellow-500", gradTo: "to-amber-600",
+      descAr: "نقل الأشخاص — السائق يحدد السعر", descFr: "Transport de personnes",
+      gradFrom: "from-amber-400", gradTo: "to-orange-600",
+      tagAr: "للأشخاص", tagFr: "Personnes",
     },
     {
-      key: "TRANSPORTEUR" as const, icon: Truck, accent: "orange",
+      key: "TRANSPORTEUR" as const, emoji: "🚚", accent: "orange",
       titleAr: "ناقل", titleFr: "Transporteur",
-      descAr: "نقل البضائع والأثاث — وزن وحجم", descFr: "Transport de marchandises",
-      gradFrom: "from-orange-500", gradTo: "to-orange-700",
+      descAr: "نقل البضائع والأثاث — وزن وحجم", descFr: "Marchandises & meubles",
+      gradFrom: "from-orange-500", gradTo: "to-red-600",
+      tagAr: "للبضائع", tagFr: "Marchandises",
     },
   ];
 
@@ -292,19 +295,26 @@ export default function NewRequestPage() {
                 return (
                   <button key={s.key} type="button"
                     onClick={() => setServiceCategory(s.key)}
-                    className={`group w-full relative overflow-hidden rounded-3xl border-2 bg-white p-5 text-start transition-all ${
-                      sel ? "border-orange-500 shadow-xl shadow-orange-500/10" : "border-slate-100 hover:border-slate-300"
+                    className={`group w-full relative overflow-hidden rounded-3xl border-2 bg-white p-5 text-start transition-all hover:scale-[1.02] active:scale-[0.99] ${
+                      sel ? "border-orange-500 shadow-2xl shadow-orange-500/20" : "border-slate-100 hover:border-slate-300 hover:shadow-lg"
                     }`}>
-                    <div className="flex items-center gap-4">
-                      <div className={`w-14 h-14 bg-gradient-to-br ${s.gradFrom} ${s.gradTo} rounded-2xl flex items-center justify-center shadow-lg shrink-0`}>
-                        <s.icon className="w-7 h-7 text-white" />
+                    {/* Decorative gradient blob */}
+                    <div className={`absolute -end-8 -top-8 w-36 h-36 rounded-full bg-gradient-to-br ${s.gradFrom} ${s.gradTo} opacity-[0.07] group-hover:opacity-[0.12] transition-opacity blur-2xl`} />
+                    <div className="relative flex items-center gap-4">
+                      <div className={`w-16 h-16 bg-gradient-to-br ${s.gradFrom} ${s.gradTo} rounded-2xl flex items-center justify-center text-3xl shadow-lg shrink-0 group-hover:scale-110 transition-transform`}>
+                        {s.emoji}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-slate-900 text-base">{ar ? s.titleAr : s.titleFr}</p>
-                        <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">{ar ? s.descAr : s.descFr}</p>
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <p className="font-black text-slate-900 text-base">{ar ? s.titleAr : s.titleFr}</p>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r ${s.gradFrom} ${s.gradTo} text-white shadow-sm`}>
+                            {ar ? s.tagAr : s.tagFr}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-500 leading-relaxed">{ar ? s.descAr : s.descFr}</p>
                       </div>
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                        sel ? "bg-orange-500 border-orange-500" : "border-slate-200"
+                        sel ? "bg-orange-500 border-orange-500 scale-110" : "border-slate-200"
                       }`}>
                         {sel && <CheckCircle className="w-4 h-4 text-white" />}
                       </div>

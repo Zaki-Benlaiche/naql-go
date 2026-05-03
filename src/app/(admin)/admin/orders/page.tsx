@@ -43,10 +43,15 @@ export default function AdminOrdersPage() {
 
   const load = useCallback(async (status: string, silent = false) => {
     if (!silent) setLoading(true);
-    const params = status ? `?status=${status}` : "";
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
     try {
-      const res = await fetch(`/api/admin/orders${params}`);
-      if (res.ok) setOrders(await res.json());
+      const res = await fetch(`/api/admin/orders?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        // API now returns { orders, total, page, pageSize } — fall back if legacy.
+        setOrders(Array.isArray(data) ? data : (data.orders ?? []));
+      }
     } finally {
       if (!silent) setLoading(false);
     }
