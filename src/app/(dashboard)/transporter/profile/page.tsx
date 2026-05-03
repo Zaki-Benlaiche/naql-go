@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { MapPin, Save, CheckCircle, Info, Search, Bike, CarTaxiFront, Truck as TruckIcon } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-import { WILAYAS, VEHICLE_TYPES } from "@/lib/constants";
+import { WILAYAS } from "@/lib/constants";
 
 type Profile = {
   id: string;
@@ -19,30 +19,6 @@ type Profile = {
   totalRatings: number;
   isOnline: boolean;
 };
-
-const vehicleColors: Record<string, {
-  selected: string; icon_bg: string; border: string; text: string; dot: string;
-}> = {
-  motorcycle:  { selected: "border-purple-400 bg-purple-50", icon_bg: "bg-purple-100", border: "border-purple-100", text: "text-purple-700", dot: "bg-purple-400" },
-  car:         { selected: "border-blue-400 bg-blue-50",     icon_bg: "bg-blue-100",   border: "border-blue-100",   text: "text-blue-700",   dot: "bg-blue-400"   },
-  van:         { selected: "border-green-400 bg-green-50",   icon_bg: "bg-green-100",  border: "border-green-100",  text: "text-green-700",  dot: "bg-green-400"  },
-  truck:       { selected: "border-orange-400 bg-orange-50", icon_bg: "bg-orange-100", border: "border-orange-100", text: "text-orange-700", dot: "bg-orange-400" },
-  heavy_truck: { selected: "border-amber-400 bg-amber-50",   icon_bg: "bg-amber-100",  border: "border-amber-100",  text: "text-amber-700",  dot: "bg-amber-400"  },
-  refrigerated:{ selected: "border-cyan-400 bg-cyan-50",     icon_bg: "bg-cyan-100",   border: "border-cyan-100",   text: "text-cyan-700",   dot: "bg-cyan-400"   },
-};
-
-const VEHICLE_PALETTE: { value: string; labelAr: string; labelFr: string; hex: string }[] = [
-  { value: "white",  labelAr: "أبيض",  labelFr: "Blanc",  hex: "#FFFFFF" },
-  { value: "black",  labelAr: "أسود",  labelFr: "Noir",   hex: "#0F172A" },
-  { value: "silver", labelAr: "فضي",   labelFr: "Argent", hex: "#94A3B8" },
-  { value: "gray",   labelAr: "رمادي", labelFr: "Gris",   hex: "#475569" },
-  { value: "red",    labelAr: "أحمر",  labelFr: "Rouge",  hex: "#DC2626" },
-  { value: "blue",   labelAr: "أزرق",  labelFr: "Bleu",   hex: "#2563EB" },
-  { value: "green",  labelAr: "أخضر",  labelFr: "Vert",   hex: "#16A34A" },
-  { value: "yellow", labelAr: "أصفر",  labelFr: "Jaune",  hex: "#EAB308" },
-  { value: "orange", labelAr: "برتقالي", labelFr: "Orange", hex: "#F97316" },
-  { value: "beige",  labelAr: "بيج",   labelFr: "Beige",  hex: "#D6CFC0" },
-];
 
 export default function TransporterProfilePage() {
   const { lang, tr } = useLanguage();
@@ -263,68 +239,39 @@ export default function TransporterProfilePage() {
           </div>
         </div>
 
-        {/* Vehicle type section */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <label className="flex items-center gap-2 text-sm font-bold text-gray-800 mb-3">
-            <span className="text-lg">🚛</span>
-            {tr("profile_vehicle")}
-          </label>
-          <div className="grid grid-cols-2 gap-2.5">
-            {VEHICLE_TYPES.map(vt => {
-              const isSelected = vehicleType === vt.value;
-              const colors = vehicleColors[vt.value] ?? {
-                selected: "border-orange-400 bg-orange-50", icon_bg: "bg-orange-100",
-                border: "border-gray-100", text: "text-orange-700", dot: "bg-orange-400",
-              };
-              return (
-                <button key={vt.value} type="button" onClick={() => setVehicleType(vt.value)}
-                  className={`relative flex flex-col gap-2 p-4 rounded-2xl border-2 text-start transition-all ${
-                    isSelected ? `${colors.selected} shadow-sm` : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50"
-                  }`}>
-                  {isSelected && <span className={`absolute top-2 end-2 w-2 h-2 rounded-full ${colors.dot}`} />}
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${
-                    isSelected ? colors.icon_bg : "bg-gray-50"
-                  }`}>{vt.icon}</div>
-                  <div>
-                    <p className={`text-sm font-bold ${isSelected ? colors.text : "text-gray-800"}`}>
-                      {ar ? vt.labelAr : vt.labelFr}
-                    </p>
-                    <p className={`text-[11px] mt-0.5 ${isSelected ? colors.text : "text-gray-400"} opacity-80`}>
-                      {ar ? vt.descAr : vt.descFr}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
+        {/* Vehicle (free text — type & colour) */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-bold text-gray-800 mb-1">
+              <span className="text-lg">🚛</span>
+              {ar ? "نوع المركبة (موديل، علامة...)" : "Véhicule (modèle, marque...)"}
+            </label>
+            <p className="text-xs text-gray-500 mb-2">
+              {ar ? "اكتب نوع مركبتك بالتفصيل ليتعرف عليها العميل" : "Décrivez votre véhicule pour aider le client à le reconnaître"}
+            </p>
+            <input
+              type="text"
+              value={vehicleType}
+              onChange={e => setVehicleType(e.target.value)}
+              placeholder={ar ? "مثال: Hyundai i10 — شاحنة Hino 300" : "ex: Hyundai i10 — Camion Hino 300"}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
+            />
           </div>
-        </div>
 
-        {/* Vehicle color section */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <label className="block text-sm font-bold text-gray-800 mb-1">
-            {ar ? "لون المركبة" : "Couleur du véhicule"}
-          </label>
-          <p className="text-xs text-gray-500 mb-3">
-            {ar ? "يساعد العميل على التعرف عليك بسرعة" : "Aide le client à vous repérer rapidement"}
-          </p>
-          <div className="grid grid-cols-5 gap-2">
-            {VEHICLE_PALETTE.map(c => {
-              const sel = vehicleColor === c.value;
-              return (
-                <button key={c.value} type="button" onClick={() => setVehicleColor(c.value)}
-                  title={ar ? c.labelAr : c.labelFr}
-                  className={`relative flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all ${
-                    sel ? "border-orange-400 bg-orange-50" : "border-gray-100 bg-white hover:bg-gray-50"
-                  }`}>
-                  <span className="w-7 h-7 rounded-full border border-gray-200 shadow-inner"
-                    style={{ background: c.hex }} />
-                  <span className="text-[10px] font-semibold text-gray-700 leading-none">
-                    {ar ? c.labelAr : c.labelFr}
-                  </span>
-                  {sel && <CheckCircle className="absolute -top-1.5 -end-1.5 w-4 h-4 text-orange-500 bg-white rounded-full" />}
-                </button>
-              );
-            })}
+          <div>
+            <label className="block text-sm font-bold text-gray-800 mb-1">
+              {ar ? "لون المركبة" : "Couleur du véhicule"}
+            </label>
+            <p className="text-xs text-gray-500 mb-2">
+              {ar ? "اكتب اللون بأي شكل تراه مناسباً" : "Écrivez la couleur comme vous le souhaitez"}
+            </p>
+            <input
+              type="text"
+              value={vehicleColor}
+              onChange={e => setVehicleColor(e.target.value)}
+              placeholder={ar ? "مثال: أبيض، أزرق غامق..." : "ex: Blanc, Bleu marine..."}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
+            />
           </div>
         </div>
 

@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useLanguage } from "@/context/LanguageContext";
-import { WILAYAS, VEHICLE_TYPES } from "@/lib/constants";
+import { WILAYAS } from "@/lib/constants";
 import {
   ArrowRight, ArrowLeft, MapPin, Star,
   CheckCircle, ChevronDown, WifiOff, RefreshCw, Truck,
@@ -20,22 +20,6 @@ const GOODS_TYPES = [
   { value: "packages",          labelAr: "طرود",        labelFr: "Colis",       icon: "📦" },
   { value: "other",             labelAr: "أخرى",        labelFr: "Autre",       icon: "📋" },
 ];
-
-const COLOR_HEX: Record<string, string> = {
-  white: "#FFFFFF", black: "#0F172A", silver: "#94A3B8", gray: "#475569",
-  red: "#DC2626", blue: "#2563EB", green: "#16A34A", yellow: "#EAB308",
-  orange: "#F97316", beige: "#D6CFC0",
-};
-const COLOR_AR: Record<string, string> = {
-  white: "أبيض", black: "أسود", silver: "فضي", gray: "رمادي",
-  red: "أحمر", blue: "أزرق", green: "أخضر", yellow: "أصفر",
-  orange: "برتقالي", beige: "بيج",
-};
-const COLOR_FR: Record<string, string> = {
-  white: "Blanc", black: "Noir", silver: "Argent", gray: "Gris",
-  red: "Rouge", blue: "Bleu", green: "Vert", yellow: "Jaune",
-  orange: "Orange", beige: "Beige",
-};
 
 type Transporter = {
   id: string; name: string; phone: string;
@@ -121,7 +105,6 @@ export default function NewRequestPage() {
 
   // INTRA
   const [selectedWilaya,  setSelectedWilaya]  = useState("");
-  const [selectedVehicle, setSelectedVehicle] = useState("");
   const [drivers,         setDrivers]         = useState<Transporter[]>([]);
   const [loadingDrivers,  setLoadingDrivers]  = useState(false);
   const [selectedDriver,  setSelectedDriver]  = useState<Transporter | null>(null);
@@ -151,8 +134,6 @@ export default function NewRequestPage() {
         wilaya: selectedWilaya,
         service: serviceCategory,
       });
-      // vehicle type filter only matters for transporteur
-      if (isTransporteur && selectedVehicle) params.set("vehicleType", selectedVehicle);
       const res = await fetch(`/api/transporters?${params}`);
       if (res.ok) setDrivers(await res.json());
     } finally { setLoadingDrivers(false); }
@@ -174,7 +155,7 @@ export default function NewRequestPage() {
           fromAddress, toAddress,
           goodsType:   isFrodeur ? null : (goodsType || null),
           weight:      isFrodeur ? null : (weight   || null),
-          vehicleType: isIntra && isTransporteur ? selectedVehicle : "any",
+          vehicleType: "any",
           size: "medium",
           description: description || null,
           transportType,
@@ -191,16 +172,6 @@ export default function NewRequestPage() {
 
   const inputCls = "w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition";
 
-  const vLabel = (v: string | null) => {
-    if (!v) return "—";
-    const found = VEHICLE_TYPES.find(x => x.value === v);
-    return found ? (ar ? found.labelAr : found.labelFr) : v;
-  };
-
-  const cLabel = (c: string | null) => {
-    if (!c) return null;
-    return ar ? (COLOR_AR[c] || c) : (COLOR_FR[c] || c);
-  };
 
   const services = [
     {
@@ -356,18 +327,14 @@ export default function NewRequestPage() {
           </div>
         )}
 
-        {/* ── STEP 3 — INTRA: wilaya (+ vehicle type if transporteur) ── */}
+        {/* ── STEP 3 — INTRA: wilaya only ── */}
         {step === 3 && transportType === "INTRA" && (
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 mb-1">
                 {ar ? "أين أنت؟" : "Où êtes-vous ?"}
               </h1>
-              <p className="text-slate-500 text-sm">
-                {isTransporteur
-                  ? (ar ? "اختر ولايتك ونوع المركبة" : "Sélectionnez votre wilaya et le type de véhicule")
-                  : (ar ? "اختر ولايتك" : "Sélectionnez votre wilaya")}
-              </p>
+              <p className="text-slate-500 text-sm">{ar ? "اختر ولايتك" : "Sélectionnez votre wilaya"}</p>
             </div>
 
             <div>
@@ -376,33 +343,12 @@ export default function NewRequestPage() {
                 placeholder={ar ? "اختر الولاية..." : "Choisir la wilaya..."} accentColor="orange" />
             </div>
 
-            {isTransporteur && (
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">{ar ? "نوع المركبة" : "Type de véhicule"}</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {VEHICLE_TYPES.map(v => (
-                    <button key={v.value} type="button" onClick={() => setSelectedVehicle(v.value)}
-                      className={`flex flex-col items-start p-4 rounded-2xl border-2 transition-all text-start ${
-                        selectedVehicle === v.value
-                          ? "border-orange-500 bg-orange-50 shadow-md shadow-orange-500/10"
-                          : "border-slate-100 bg-white hover:border-orange-200"
-                      }`}>
-                      <span className="text-2xl mb-2">{v.icon}</span>
-                      <p className="font-bold text-slate-900 text-sm">{ar ? v.labelAr : v.labelFr}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{ar ? v.descAr : v.descFr}</p>
-                      {selectedVehicle === v.value && <CheckCircle className="w-4 h-4 text-orange-500 mt-2" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="flex gap-3">
               <button onClick={() => setStep(2)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <button onClick={() => { fetchDrivers(); setStep(4); }}
-                disabled={!selectedWilaya || (isTransporteur && !selectedVehicle)}
+                disabled={!selectedWilaya}
                 className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
                 {ar ? "عرض السائقين المتاحين" : "Voir les chauffeurs"}
                 <ArrowRight className="w-4 h-4" />
@@ -447,10 +393,7 @@ export default function NewRequestPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">{ar ? "السائقون المتاحون" : "Chauffeurs disponibles"}</h1>
-                <p className="text-sm text-slate-500 mt-0.5">
-                  {selectedWilaya}
-                  {isTransporteur && ` · ${vLabel(selectedVehicle)}`}
-                </p>
+                <p className="text-sm text-slate-500 mt-0.5">{selectedWilaya}</p>
               </div>
               <button onClick={fetchDrivers} disabled={loadingDrivers}
                 className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition">
@@ -492,7 +435,7 @@ export default function NewRequestPage() {
                         selectedDriver?.id === d.id ? "border-2 border-orange-500 shadow-lg shadow-orange-500/10" : "hover:shadow-md"
                       }`}>
                       <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl flex items-center justify-center text-xl shrink-0 border border-slate-100">
-                        {VEHICLE_TYPES.find(v => v.value === d.vehicleType)?.icon ?? "🚗"}
+                        🚗
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -511,16 +454,12 @@ export default function NewRequestPage() {
                           {d.avgRating != null && <span className="text-xs font-semibold text-slate-600">{d.avgRating.toFixed(1)}</span>}
                           {d.totalRatings > 0 && <span className="text-xs text-slate-400">({d.totalRatings})</span>}
                         </div>
-                        {/* Vehicle line — show type + colored dot for transporteur */}
-                        {isTransporteur && (
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <p className="text-xs text-slate-500">{vLabel(d.vehicleType)}</p>
+                        {/* Vehicle (free text) + colour text */}
+                        {(d.vehicleType || d.vehicleColor) && (
+                          <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500 flex-wrap">
+                            {d.vehicleType && <span>🚗 {d.vehicleType}</span>}
                             {d.vehicleColor && (
-                              <span className="flex items-center gap-1 text-[10px] text-slate-500">
-                                <span className="w-3 h-3 rounded-full border border-slate-300"
-                                  style={{ background: COLOR_HEX[d.vehicleColor] || "#94A3B8" }} />
-                                {cLabel(d.vehicleColor)}
-                              </span>
+                              <span className="text-slate-400">· {d.vehicleColor}</span>
                             )}
                           </div>
                         )}

@@ -19,50 +19,51 @@ export async function POST(req: NextRequest) {
 
     const request = await prisma.transportRequest.findUnique({
       where: { id: requestId },
-      include: { client: { select: { name: true } } },
+      select: { id: true, clientId: true, status: true, fromCity: true, toCity: true },
     });
-
     if (!request) return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
     if (request.clientId !== session.user.id) return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     if (request.status !== "OPEN") return NextResponse.json({ error: "الطلب مغلق بالفعل" }, { status: 400 });
 
     const bid = await prisma.bid.findUnique({
       where: { id: bidId },
-      include: { transporter: { select: { id: true, name: true } } },
+      select: { id: true, requestId: true, price: true, transporterId: true },
     });
     if (!bid || bid.requestId !== requestId) {
       return NextResponse.json({ error: "العرض غير موجود" }, { status: 404 });
     }
 
-    // Update bid → ACCEPTED
-    await prisma.bid.update({ where: { id: bidId }, data: { status: "ACCEPTED" } });
+    // Raw SQL — NeonHTTP doesn't support implicit transactions that
+    // Prisma's high-level update can trigger when touching a unique relation
+    // (acceptedBidId) on a model with many reverse relations.
+    await prisma.$executeRaw`UPDATE bids SET status='ACCEPTED' WHERE id=${bidId}`;
+    await prisma.$executeRaw`
+      UPDATE transport_requests
+         SET status='ACCEPTED', "acceptedBidId"=${bidId}
+       WHERE id=${requestId}
+    `;
+    await prisma.$executeRaw`
+      UPDATE bids SET status='REJECTED'
+       WHERE "requestId"=${requestId} AND id<>${bidId}
+    `;
 
-    // Update request → ACCEPTED + acceptedBidId
-    await prisma.transportRequest.update({
-      where: { id: requestId },
-      data: { status: "ACCEPTED", acceptedBidId: bidId },
-    });
-
-    // Reject other bids
-    await prisma.bid.updateMany({
-      where: { requestId, id: { not: bidId } },
-      data: { status: "REJECTED" },
-    });
-
-    // Notify the transporter whose bid was accepted
-    await prisma.notification.create({
-      data: {
-        userId: bid.transporter.id,
-        title: "🎉 تم قبول عرضك!",
-        body: `${request.fromCity} ← ${request.toCity} — ${bid.price.toLocaleString()} دج`,
-        type: "bid_accepted",
-        requestId,
-      },
-    });
+    // Notification (single insert — safe). Best-effort.
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: bid.transporterId,
+          title: "🎉 تم قبول عرضك!",
+          body: `${request.fromCity} ← ${request.toCity} — ${bid.price.toLocaleString()} دج`,
+          type: "bid_accepted",
+          requestId,
+        },
+      });
+    } catch (e) { console.error("[bids/accept notification]", e); }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[bids/accept]", error);
-    return NextResponse.json({ error: "خطأ في الخادم" }, { status: 500 });
+    const msg = error instanceof Error ? error.message : "خطأ في الخادم";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

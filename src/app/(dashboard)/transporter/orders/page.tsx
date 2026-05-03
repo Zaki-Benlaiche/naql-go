@@ -16,9 +16,10 @@ type Order = {
   status: string; updatedAt: string;
   proofOfDelivery: string | null;
   transportType: string;
+  serviceCategory?: string;
   assignedTransporterId: string | null;
   client: { name: string; phone: string };
-  bids: { price: number; estimatedTime: string; note: string | null }[];
+  bids: { id?: string; price: number; estimatedTime: string; note: string | null; status?: string }[];
 };
 
 const statusConfig: Record<string, { color: string; bg: string }> = {
@@ -121,13 +122,31 @@ export default function TransporterOrdersPage() {
     }
   }
 
-  const statusLabel = (s: string) => {
-    if (s === "OPEN")       return lang === "ar" ? "⏳ في انتظار قبولك" : "⏳ En attente";
-    if (s === "ACCEPTED")   return lang === "ar" ? "مقبول — في الانتظار" : "Accepté — En attente";
-    if (s === "IN_TRANSIT") return lang === "ar" ? "🚚 في الطريق"        : "🚚 En route";
-    if (s === "DELIVERED")  return lang === "ar" ? "✅ تم التسليم"       : "✅ Livré";
+  const statusLabel = (s: string, hasBid: boolean) => {
+    if (s === "OPEN") {
+      if (hasBid) return lang === "ar" ? "⏳ في انتظار قبول العميل" : "⏳ En attente du client";
+      return lang === "ar" ? "💰 اقترح السعر" : "💰 Proposez un prix";
+    }
+    if (s === "ACCEPTED")   return lang === "ar" ? "✅ مقبول — جاهز للانطلاق" : "✅ Accepté — prêt à partir";
+    if (s === "IN_TRANSIT") return lang === "ar" ? "🚚 في الطريق"             : "🚚 En route";
+    if (s === "DELIVERED")  return lang === "ar" ? "✅ تم التسليم"            : "✅ Livré";
     return s;
   };
+
+  async function proposePrice(orderId: string, price: string, time: string, note: string) {
+    const res = await fetch("/api/bids", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requestId: orderId, price, estimatedTime: time, note }),
+    });
+    if (res.ok) {
+      showToast(lang === "ar" ? "✅ تم إرسال السعر للعميل" : "✅ Prix envoyé au client");
+      await load();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.error || (lang === "ar" ? "خطأ في الإرسال" : "Erreur"));
+    }
+  }
 
   const pendingDirect = orders.filter(o => o.status === "OPEN" && o.transportType === "INTRA");
   const activeOrders  = orders.filter(o => o.status !== "OPEN");
@@ -190,6 +209,7 @@ export default function TransporterOrdersPage() {
                       fileInputRef={fileInputRef}
                       setProofTarget={setProofTarget}
                       updateStatus={updateStatus}
+                      onPropose={proposePrice}
                     />
                   ))}
                 </div>
@@ -216,6 +236,7 @@ export default function TransporterOrdersPage() {
                     fileInputRef={fileInputRef}
                     setProofTarget={setProofTarget}
                     updateStatus={updateStatus}
+                    onPropose={proposePrice}
                   />
                 ))}
               </div>
@@ -231,15 +252,16 @@ type OrderCardProps = {
   order: Order;
   lang: string;
   tr: (key: TranslationKey) => string;
-  statusLabel: (s: string) => string;
+  statusLabel: (s: string, hasBid: boolean) => string;
   updating: string | null;
   uploading: string | null;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   setProofTarget: (id: string) => void;
   updateStatus: (id: string, status: "ACCEPTED" | "IN_TRANSIT" | "DELIVERED") => void;
+  onPropose: (orderId: string, price: string, time: string, note: string) => Promise<void>;
 };
 
-function OrderCard({ order, lang, tr, statusLabel, updating, uploading, fileInputRef, setProofTarget, updateStatus }: OrderCardProps) {
+function OrderCard({ order, lang, tr, statusLabel, updating, uploading, fileInputRef, setProofTarget, updateStatus, onPropose }: OrderCardProps) {
   const bid = order.bids[0];
   const cfg = statusConfig[order.status] ?? { color: "text-gray-600", bg: "bg-gray-50" };
   const isOpen      = order.status === "OPEN";
@@ -247,6 +269,13 @@ function OrderCard({ order, lang, tr, statusLabel, updating, uploading, fileInpu
   const isInTransit = order.status === "IN_TRANSIT";
   const isAccepted  = order.status === "ACCEPTED";
   const isDirect    = order.transportType === "INTRA";
+  const hasMyBid    = !!bid;
+  const ar          = lang === "ar";
+
+  const [price, setPrice]             = useState("");
+  const [estimatedTime, setEstimatedTime] = useState("");
+  const [note, setNote]               = useState("");
+  const [submitting, setSubmitting]   = useState(false);
 
   return (
     <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${isOpen ? "border-purple-200 shadow-purple-100" : "border-gray-100"}`}>
@@ -255,7 +284,7 @@ function OrderCard({ order, lang, tr, statusLabel, updating, uploading, fileInpu
       <div className={`flex items-center justify-between px-4 py-2.5 ${cfg.bg}`}>
         <div className="flex items-center gap-2">
           <span className={`text-sm font-semibold ${cfg.color}`}>
-            {statusLabel(order.status)}
+            {statusLabel(order.status, hasMyBid)}
           </span>
           {isDirect && (
             <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
@@ -322,17 +351,65 @@ function OrderCard({ order, lang, tr, statusLabel, updating, uploading, fileInpu
 
         {/* Action buttons */}
         {isOpen ? (
-          /* Direct INTRA pending accept */
-          <button
-            onClick={() => updateStatus(order.id, "ACCEPTED")}
-            disabled={updating === order.id + "ACCEPTED"}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-all text-sm shadow-sm shadow-purple-200"
-          >
-            {updating === order.id + "ACCEPTED"
-              ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-              : <><CheckCircle className="w-4 h-4" /> {tr("accept_request")}</>
-            }
-          </button>
+          hasMyBid ? (
+            // Already proposed — waiting for client to accept
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
+              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse shrink-0" />
+              <div className="text-sm text-amber-800 leading-tight flex-1">
+                <p className="font-bold">
+                  {ar ? "تم إرسال السعر للعميل" : "Prix envoyé au client"}
+                </p>
+                <p className="text-xs mt-0.5 text-amber-700">
+                  {ar
+                    ? `سعرك: ${bid.price.toLocaleString()} دج — في انتظار قبول العميل`
+                    : `Votre prix : ${bid.price.toLocaleString()} DA — en attente du client`}
+                </p>
+              </div>
+            </div>
+          ) : (
+            // Propose a price form
+            <div className="bg-purple-50/50 border border-purple-100 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-bold text-purple-700 mb-1">
+                {ar ? "💰 اقترح سعرك للعميل" : "💰 Proposez votre prix"}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number" inputMode="numeric" min="1"
+                  value={price} onChange={e => setPrice(e.target.value)}
+                  placeholder={ar ? "السعر (دج)" : "Prix (DA)"}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-300"
+                />
+                <input
+                  type="text"
+                  value={estimatedTime} onChange={e => setEstimatedTime(e.target.value)}
+                  placeholder={ar ? "الوقت (مثال: 30 دقيقة)" : "Temps (ex: 30 min)"}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-300"
+                />
+              </div>
+              <input
+                type="text"
+                value={note} onChange={e => setNote(e.target.value)}
+                placeholder={ar ? "ملاحظة (اختياري)" : "Note (facultatif)"}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-300"
+              />
+              <button
+                onClick={async () => {
+                  if (!price || !estimatedTime) return;
+                  setSubmitting(true);
+                  await onPropose(order.id, price, estimatedTime, note);
+                  setSubmitting(false);
+                  setPrice(""); setEstimatedTime(""); setNote("");
+                }}
+                disabled={!price || !estimatedTime || submitting}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-sm shadow-purple-200"
+              >
+                {submitting
+                  ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  : <><CheckCircle className="w-4 h-4" /> {ar ? "إرسال السعر للعميل" : "Envoyer au client"}</>
+                }
+              </button>
+            </div>
+          )
         ) : isDelivered ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
