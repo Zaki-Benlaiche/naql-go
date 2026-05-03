@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-// Returns online transporters filtered by wilaya and optional vehicleType
+// Returns online transporters filtered by wilaya, service category, and optional vehicleType.
+// Service: LIVREUR (delivery) | FRODEUR (taxi) | TRANSPORTEUR (goods)
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,8 +15,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const wilaya      = searchParams.get("wilaya");
     const vehicleType = searchParams.get("vehicleType");
+    const service     = searchParams.get("service"); // LIVREUR | FRODEUR | TRANSPORTEUR
 
     if (!wilaya) return NextResponse.json({ error: "الولاية مطلوبة" }, { status: 400 });
+
+    const serviceFilter =
+      service === "LIVREUR"      ? { isLivreur: true } :
+      service === "FRODEUR"      ? { isFrodeur: true } :
+      service === "TRANSPORTEUR" ? { isTransporteur: true } :
+      {};
 
     const transporters = await prisma.user.findMany({
       where: {
@@ -23,6 +31,7 @@ export async function GET(req: NextRequest) {
         isActive: true,
         isOnline: true,
         wilaya,
+        ...serviceFilter,
         ...(vehicleType ? { vehicleType } : {}),
       },
       select: {
@@ -31,6 +40,10 @@ export async function GET(req: NextRequest) {
         phone: true,
         wilaya: true,
         vehicleType: true,
+        vehicleColor: true,
+        isLivreur: true,
+        isFrodeur: true,
+        isTransporteur: true,
         avgRating: true,
         totalRatings: true,
         isOnline: true,

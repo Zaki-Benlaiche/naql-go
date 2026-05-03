@@ -19,6 +19,11 @@ model User {
   totalRatings Int      @default(0)
   wilaya       String?
   vehicleType  String?
+  vehicleColor String?
+  // Services this transporter offers (a driver can be more than one).
+  isLivreur      Boolean @default(false)
+  isFrodeur      Boolean @default(false)
+  isTransporteur Boolean @default(true)
   createdAt    DateTime @default(now())
 
   requests        TransportRequest[] @relation("ClientRequests")
@@ -57,11 +62,13 @@ model TransportRequest {
   fromAddress   String
   toAddress     String
 
-  goodsType     String
+  goodsType     String?
   vehicleType   String   @default("any")
   size          String   @default("medium")
-  weight        Float
+  weight        Float?
   description   String?
+  // LIVREUR | FRODEUR | TRANSPORTEUR
+  serviceCategory String @default("TRANSPORTEUR")
   estimatedPrice Float?
   scheduledAt   DateTime?
 

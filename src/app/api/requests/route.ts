@@ -27,9 +27,23 @@ export async function GET(req: NextRequest) {
     }
 
     if (session.user.role === "TRANSPORTER") {
-      // INTER requests (bidding) — only OPEN + no direct assignment
+      // Filter INTER (bidding) feed by services this transporter offers
+      const me = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { isLivreur: true, isFrodeur: true, isTransporteur: true },
+      });
+      const myServices: string[] = [];
+      if (me?.isLivreur)      myServices.push("LIVREUR");
+      if (me?.isFrodeur)      myServices.push("FRODEUR");
+      if (me?.isTransporteur) myServices.push("TRANSPORTEUR");
+
       const interRequests = await prisma.transportRequest.findMany({
-        where: { status: "OPEN", transportType: "INTER", assignedTransporterId: null },
+        where: {
+          status: "OPEN",
+          transportType: "INTER",
+          assignedTransporterId: null,
+          ...(myServices.length > 0 ? { serviceCategory: { in: myServices } } : {}),
+        },
         include: {
           client: { select: { name: true, phone: true } },
           bids: { where: { transporterId: session.user.id } },
@@ -79,7 +93,10 @@ export async function POST(req: NextRequest) {
       estimatedPrice, scheduledAt, discountPercent, finalPrice,
       fromLat, fromLng, toLat, toLng,
       transportType, assignedTransporterId,
+      serviceCategory,
     } = body;
+
+    const cat = (serviceCategory as string | undefined)?.toUpperCase() || "TRANSPORTEUR";
 
     const request = await prisma.transportRequest.create({
       data: {
@@ -87,10 +104,11 @@ export async function POST(req: NextRequest) {
         fromCity, toCity,
         fromAddress: fromAddress || "",
         toAddress:   toAddress   || "",
-        goodsType,
+        // For taxi (FRODEUR) goodsType / weight aren't relevant.
+        goodsType:   cat === "FRODEUR" ? null : (goodsType || null),
         vehicleType: vehicleType || "any",
         size:        size        || "medium",
-        weight:      parseFloat(weight),
+        weight:      cat === "FRODEUR" || !weight ? null : parseFloat(weight),
         description: description || null,
         estimatedPrice:  estimatedPrice  ? parseFloat(estimatedPrice)  : null,
         scheduledAt:     scheduledAt     ? new Date(scheduledAt)       : null,
@@ -102,6 +120,7 @@ export async function POST(req: NextRequest) {
         toLng:   toLng   ? parseFloat(toLng)   : null,
         transportType:         transportType         || "INTER",
         assignedTransporterId: assignedTransporterId || null,
+        serviceCategory:       cat,
       },
     });
 

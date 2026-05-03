@@ -7,7 +7,10 @@ import { WILAYAS, VEHICLE_TYPES } from "@/lib/constants";
 import {
   ArrowRight, ArrowLeft, MapPin, Star,
   CheckCircle, ChevronDown, WifiOff, RefreshCw, Truck,
+  Bike, CarTaxiFront,
 } from "lucide-react";
+
+type ServiceCategory = "LIVREUR" | "FRODEUR" | "TRANSPORTEUR";
 
 const GOODS_TYPES = [
   { value: "furniture",         labelAr: "أثاث",        labelFr: "Mobilier",    icon: "🛋️" },
@@ -18,9 +21,28 @@ const GOODS_TYPES = [
   { value: "other",             labelAr: "أخرى",        labelFr: "Autre",       icon: "📋" },
 ];
 
+const COLOR_HEX: Record<string, string> = {
+  white: "#FFFFFF", black: "#0F172A", silver: "#94A3B8", gray: "#475569",
+  red: "#DC2626", blue: "#2563EB", green: "#16A34A", yellow: "#EAB308",
+  orange: "#F97316", beige: "#D6CFC0",
+};
+const COLOR_AR: Record<string, string> = {
+  white: "أبيض", black: "أسود", silver: "فضي", gray: "رمادي",
+  red: "أحمر", blue: "أزرق", green: "أخضر", yellow: "أصفر",
+  orange: "برتقالي", beige: "بيج",
+};
+const COLOR_FR: Record<string, string> = {
+  white: "Blanc", black: "Noir", silver: "Argent", gray: "Gris",
+  red: "Rouge", blue: "Bleu", green: "Vert", yellow: "Jaune",
+  orange: "Orange", beige: "Beige",
+};
+
 type Transporter = {
   id: string; name: string; phone: string;
-  vehicleType: string | null; avgRating: number | null;
+  vehicleType: string | null;
+  vehicleColor: string | null;
+  isLivreur?: boolean; isFrodeur?: boolean; isTransporteur?: boolean;
+  avgRating: number | null;
   totalRatings: number; isOnline: boolean; wilaya: string | null;
 };
 
@@ -85,9 +107,17 @@ function WilayaDropdown({
 export default function NewRequestPage() {
   const { lang } = useLanguage();
   const router = useRouter();
+  const ar = lang === "ar";
 
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [transportType, setTransportType] = useState<"INTER" | "INTRA" | "">("");
+  // Steps:
+  //  1 = INTRA / INTER
+  //  2 = service category (livreur / frodeur / transporteur)
+  //  3 = wilaya (+ vehicle type only for transporteur)  OR  from/to for INTER
+  //  4 = drivers list (INTRA only)
+  //  5 = details form
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [transportType, setTransportType]     = useState<"INTER" | "INTRA" | "">("");
+  const [serviceCategory, setServiceCategory] = useState<ServiceCategory | "">("");
 
   // INTRA
   const [selectedWilaya,  setSelectedWilaya]  = useState("");
@@ -100,7 +130,7 @@ export default function NewRequestPage() {
   const [fromCity, setFromCity] = useState("");
   const [toCity,   setToCity]   = useState("");
 
-  // Step 4 — details
+  // Step 5 — details
   const [fromAddress, setFromAddress] = useState("");
   const [toAddress,   setToAddress]   = useState("");
   const [goodsType,   setGoodsType]   = useState("");
@@ -110,19 +140,28 @@ export default function NewRequestPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast,      setToast]      = useState<string | null>(null);
 
-  const ar = lang === "ar";
+  const isTransporteur = serviceCategory === "TRANSPORTEUR";
+  const isFrodeur      = serviceCategory === "FRODEUR";
 
   async function fetchDrivers() {
-    if (!selectedWilaya || !selectedVehicle) return;
+    if (!selectedWilaya || !serviceCategory) return;
     setLoadingDrivers(true); setDrivers([]); setSelectedDriver(null);
     try {
-      const res = await fetch(`/api/transporters?wilaya=${encodeURIComponent(selectedWilaya)}&vehicleType=${selectedVehicle}`);
+      const params = new URLSearchParams({
+        wilaya: selectedWilaya,
+        service: serviceCategory,
+      });
+      // vehicle type filter only matters for transporteur
+      if (isTransporteur && selectedVehicle) params.set("vehicleType", selectedVehicle);
+      const res = await fetch(`/api/transporters?${params}`);
       if (res.ok) setDrivers(await res.json());
     } finally { setLoadingDrivers(false); }
   }
 
   async function handleSubmit() {
-    if (!goodsType || !weight) return;
+    // Frodeur (taxi): no goods, just route. Livreur: goodsType optional. Transporteur: goods required.
+    if (isTransporteur && (!goodsType || !weight)) return;
+
     setSubmitting(true);
     try {
       const isIntra = transportType === "INTRA";
@@ -132,12 +171,15 @@ export default function NewRequestPage() {
         body: JSON.stringify({
           fromCity:    isIntra ? selectedWilaya : fromCity,
           toCity:      isIntra ? selectedWilaya : toCity,
-          fromAddress, toAddress, goodsType, weight,
-          vehicleType: isIntra ? selectedVehicle : "any",
+          fromAddress, toAddress,
+          goodsType:   isFrodeur ? null : (goodsType || null),
+          weight:      isFrodeur ? null : (weight   || null),
+          vehicleType: isIntra && isTransporteur ? selectedVehicle : "any",
           size: "medium",
           description: description || null,
           transportType,
           assignedTransporterId: isIntra ? selectedDriver?.id : null,
+          serviceCategory,
         }),
       });
       if (res.ok) {
@@ -149,15 +191,44 @@ export default function NewRequestPage() {
 
   const inputCls = "w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition";
 
-  const vLabel = (v: string) => {
+  const vLabel = (v: string | null) => {
+    if (!v) return "—";
     const found = VEHICLE_TYPES.find(x => x.value === v);
     return found ? (ar ? found.labelAr : found.labelFr) : v;
   };
 
-  // Step labels
+  const cLabel = (c: string | null) => {
+    if (!c) return null;
+    return ar ? (COLOR_AR[c] || c) : (COLOR_FR[c] || c);
+  };
+
+  const services = [
+    {
+      key: "LIVREUR" as const, icon: Bike, accent: "purple",
+      titleAr: "موصِّل", titleFr: "Livreur",
+      descAr: "توصيل طرود ومشتريات صغيرة", descFr: "Livraison de petits colis",
+      gradFrom: "from-purple-500", gradTo: "to-purple-700",
+    },
+    {
+      key: "FRODEUR" as const, icon: CarTaxiFront, accent: "yellow",
+      titleAr: "أجرة", titleFr: "Taxi (Frodeur)",
+      descAr: "نقل الأشخاص — السائق يحدد السعر", descFr: "Transport de personnes — le chauffeur fixe le prix",
+      gradFrom: "from-yellow-500", gradTo: "to-amber-600",
+    },
+    {
+      key: "TRANSPORTEUR" as const, icon: Truck, accent: "orange",
+      titleAr: "ناقل", titleFr: "Transporteur",
+      descAr: "نقل البضائع والأثاث — وزن وحجم", descFr: "Transport de marchandises",
+      gradFrom: "from-orange-500", gradTo: "to-orange-700",
+    },
+  ];
+
+  // Step labels for progress
   const stepLabels = ar
-    ? ["نوع النقل", "تفاصيل الرحلة", ar && transportType === "INTRA" ? "اختر السائق" : "المسار", "تفاصيل الطلب"]
-    : ["Type", "Trajet", transportType === "INTRA" ? "Chauffeur" : "Trajet", "Détails"];
+    ? ["نوع النقل", "الخدمة", transportType === "INTRA" ? "الموقع" : "المسار",
+       transportType === "INTRA" ? "السائق" : "التفاصيل", "التفاصيل"]
+    : ["Type", "Service", transportType === "INTRA" ? "Lieu" : "Trajet",
+       transportType === "INTRA" ? "Chauffeur" : "Détails", "Détails"];
 
   return (
     <DashboardLayout>
@@ -171,17 +242,17 @@ export default function NewRequestPage() {
 
         {/* Progress */}
         <div className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            {[1,2,3,4].map(s => (
-              <div key={s} className="flex items-center gap-2 flex-1 last:flex-none">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
+          <div className="flex items-center gap-1 mb-3">
+            {[1,2,3,4,5].map(s => (
+              <div key={s} className="flex items-center gap-1 flex-1 last:flex-none">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
                   step > s  ? "bg-emerald-500 text-white" :
                   step === s ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30" :
                   "bg-white border-2 border-slate-200 text-slate-400"
                 }`}>
-                  {step > s ? <CheckCircle className="w-4 h-4" /> : s}
+                  {step > s ? <CheckCircle className="w-3.5 h-3.5" /> : s}
                 </div>
-                {s < 4 && <div className={`h-1 flex-1 rounded-full transition-all ${step > s ? "bg-emerald-400" : "bg-slate-200"}`} />}
+                {s < 5 && <div className={`h-1 flex-1 rounded-full transition-all ${step > s ? "bg-emerald-400" : "bg-slate-200"}`} />}
               </div>
             ))}
           </div>
@@ -197,65 +268,106 @@ export default function NewRequestPage() {
               {ar ? "نوع النقل" : "Type de transport"}
             </h1>
             <p className="text-slate-500 text-sm mb-7">
-              {ar ? "اختر الخدمة المناسبة لاحتياجك" : "Choisissez le service adapté"}
+              {ar ? "داخل ولايتك أو بين الولايات" : "Dans votre wilaya ou entre wilayas"}
             </p>
 
             <div className="space-y-4">
-              <button onClick={() => { setTransportType("INTER"); setStep(3); }}
-                className="group w-full relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-5 text-start hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-200">
-                <div className="absolute -end-6 -top-6 w-32 h-32 bg-blue-500/5 rounded-full group-hover:scale-150 transition-all duration-300" />
+              <button onClick={() => { setTransportType("INTRA"); setStep(2); }}
+                className="group w-full relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-5 text-start hover:border-orange-400 hover:shadow-xl hover:shadow-orange-500/10 transition-all">
+                <div className="absolute -end-6 -top-6 w-32 h-32 bg-orange-500/5 rounded-full group-hover:scale-150 transition-all duration-300" />
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30 shrink-0">
-                    🚛
-                  </div>
+                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-orange-500/30 shrink-0">📦</div>
                   <div className="flex-1">
-                    <p className="font-bold text-slate-900 text-base">
-                      {ar ? "نقل عبر الولايات" : "Transport inter-wilayas"}
-                    </p>
+                    <p className="font-bold text-slate-900 text-base">{ar ? "داخل الولاية" : "Dans la wilaya"}</p>
                     <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">
-                      {ar ? "الناقلون يتنافسون بعروضهم — اختر أفضل سعر" : "Les transporteurs font leurs offres — choisissez le meilleur prix"}
+                      {ar ? "اختر سائقاً متاحاً في ولايتك مباشرة" : "Choisissez un chauffeur disponible dans votre wilaya"}
                     </p>
-                    <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
-                      {ar ? "نظام المزايدة" : "Système d'enchères"}
-                    </span>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition-colors shrink-0" />
+                  <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-orange-500 transition-colors shrink-0" />
                 </div>
               </button>
 
-              <button onClick={() => { setTransportType("INTRA"); setStep(2); }}
-                className="group w-full relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-5 text-start hover:border-orange-400 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-200">
-                <div className="absolute -end-6 -top-6 w-32 h-32 bg-orange-500/5 rounded-full group-hover:scale-150 transition-all duration-300" />
+              <button onClick={() => { setTransportType("INTER"); setStep(2); }}
+                className="group w-full relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-5 text-start hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 transition-all">
+                <div className="absolute -end-6 -top-6 w-32 h-32 bg-blue-500/5 rounded-full group-hover:scale-150 transition-all duration-300" />
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-orange-500/30 shrink-0">
-                    📦
-                  </div>
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30 shrink-0">🚛</div>
                   <div className="flex-1">
-                    <p className="font-bold text-slate-900 text-base">
-                      {ar ? "نقل داخل الولاية" : "Transport intra-wilaya"}
-                    </p>
+                    <p className="font-bold text-slate-900 text-base">{ar ? "بين الولايات" : "Entre wilayas"}</p>
                     <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">
-                      {ar ? "اختر سائقاً متاحاً في ولايتك مباشرة" : "Choisissez directement un chauffeur disponible dans votre wilaya"}
+                      {ar ? "الناقلون يتنافسون بعروضهم — اختر أفضل سعر" : "Les transporteurs font leurs offres"}
                     </p>
-                    <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
-                      {ar ? "اختيار مباشر" : "Sélection directe"}
-                    </span>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-orange-500 transition-colors shrink-0" />
+                  <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition-colors shrink-0" />
                 </div>
               </button>
             </div>
           </div>
         )}
 
-        {/* ── STEP 2: INTRA — wilaya + vehicle ── */}
+        {/* ── STEP 2: Service category ── */}
         {step === 2 && (
+          <div className="space-y-5">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-1">
+                {ar ? "ماذا تحتاج؟" : "De quoi avez-vous besoin ?"}
+              </h1>
+              <p className="text-slate-500 text-sm">{ar ? "اختر نوع الخدمة" : "Choisissez le type de service"}</p>
+            </div>
+
+            <div className="space-y-3">
+              {services.map(s => {
+                const sel = serviceCategory === s.key;
+                return (
+                  <button key={s.key} type="button"
+                    onClick={() => setServiceCategory(s.key)}
+                    className={`group w-full relative overflow-hidden rounded-3xl border-2 bg-white p-5 text-start transition-all ${
+                      sel ? "border-orange-500 shadow-xl shadow-orange-500/10" : "border-slate-100 hover:border-slate-300"
+                    }`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-14 h-14 bg-gradient-to-br ${s.gradFrom} ${s.gradTo} rounded-2xl flex items-center justify-center shadow-lg shrink-0`}>
+                        <s.icon className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-900 text-base">{ar ? s.titleAr : s.titleFr}</p>
+                        <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">{ar ? s.descAr : s.descFr}</p>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                        sel ? "bg-orange-500 border-orange-500" : "border-slate-200"
+                      }`}>
+                        {sel && <CheckCircle className="w-4 h-4 text-white" />}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setStep(1)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <button onClick={() => setStep(3)} disabled={!serviceCategory}
+                className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                {ar ? "التالي" : "Suivant"}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3 — INTRA: wilaya (+ vehicle type if transporteur) ── */}
+        {step === 3 && transportType === "INTRA" && (
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 mb-1">
-                {ar ? "أين تريد النقل؟" : "Où souhaitez-vous livrer ?"}
+                {ar ? "أين أنت؟" : "Où êtes-vous ?"}
               </h1>
-              <p className="text-slate-500 text-sm">{ar ? "اختر ولايتك ونوع المركبة" : "Sélectionnez votre wilaya et le type de véhicule"}</p>
+              <p className="text-slate-500 text-sm">
+                {isTransporteur
+                  ? (ar ? "اختر ولايتك ونوع المركبة" : "Sélectionnez votre wilaya et le type de véhicule")
+                  : (ar ? "اختر ولايتك" : "Sélectionnez votre wilaya")}
+              </p>
             </div>
 
             <div>
@@ -264,45 +376,81 @@ export default function NewRequestPage() {
                 placeholder={ar ? "اختر الولاية..." : "Choisir la wilaya..."} accentColor="orange" />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">{ar ? "نوع المركبة" : "Type de véhicule"}</label>
-              <div className="grid grid-cols-2 gap-3">
-                {VEHICLE_TYPES.map(v => (
-                  <button key={v.value} type="button" onClick={() => setSelectedVehicle(v.value)}
-                    className={`flex flex-col items-start p-4 rounded-2xl border-2 transition-all text-start ${
-                      selectedVehicle === v.value
-                        ? "border-orange-500 bg-orange-50 shadow-md shadow-orange-500/10"
-                        : "border-slate-100 bg-white hover:border-orange-200 hover:shadow-sm"
-                    }`}>
-                    <span className="text-2xl mb-2">{v.icon}</span>
-                    <p className="font-bold text-slate-900 text-sm">{ar ? v.labelAr : v.labelFr}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{ar ? v.descAr : v.descFr}</p>
-                    {selectedVehicle === v.value && <CheckCircle className="w-4 h-4 text-orange-500 mt-2" />}
-                  </button>
-                ))}
+            {isTransporteur && (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-3">{ar ? "نوع المركبة" : "Type de véhicule"}</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {VEHICLE_TYPES.map(v => (
+                    <button key={v.value} type="button" onClick={() => setSelectedVehicle(v.value)}
+                      className={`flex flex-col items-start p-4 rounded-2xl border-2 transition-all text-start ${
+                        selectedVehicle === v.value
+                          ? "border-orange-500 bg-orange-50 shadow-md shadow-orange-500/10"
+                          : "border-slate-100 bg-white hover:border-orange-200"
+                      }`}>
+                      <span className="text-2xl mb-2">{v.icon}</span>
+                      <p className="font-bold text-slate-900 text-sm">{ar ? v.labelAr : v.labelFr}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{ar ? v.descAr : v.descFr}</p>
+                      {selectedVehicle === v.value && <CheckCircle className="w-4 h-4 text-orange-500 mt-2" />}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex gap-3">
-              <button onClick={() => setStep(1)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+              <button onClick={() => setStep(2)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
                 <ArrowLeft className="w-4 h-4" />
               </button>
-              <button onClick={() => { fetchDrivers(); setStep(3); }} disabled={!selectedWilaya || !selectedVehicle}
+              <button onClick={() => { fetchDrivers(); setStep(4); }}
+                disabled={!selectedWilaya || (isTransporteur && !selectedVehicle)}
                 className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
-                {ar ? "عرض السائقين المتاحين" : "Voir les chauffeurs disponibles"}
+                {ar ? "عرض السائقين المتاحين" : "Voir les chauffeurs"}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
 
-        {/* ── STEP 3: Drivers (INTRA) ── */}
-        {step === 3 && transportType === "INTRA" && (
+        {/* ── STEP 3 — INTER: from/to ── */}
+        {step === 3 && transportType === "INTER" && (
+          <div className="space-y-5">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-1">{ar ? "من أين إلى أين؟" : "D'où vers où ?"}</h1>
+              <p className="text-slate-500 text-sm">{ar ? "حدد ولاية الانطلاق والوصول" : "Wilayas de départ et d'arrivée"}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">{ar ? "ولاية الانطلاق" : "Wilaya de départ"}</label>
+              <WilayaDropdown value={fromCity} onChange={setFromCity}
+                placeholder={ar ? "اختر..." : "Choisir..."} accentColor="blue" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">{ar ? "ولاية الوصول" : "Wilaya d'arrivée"}</label>
+              <WilayaDropdown value={toCity} onChange={setToCity}
+                placeholder={ar ? "اختر..." : "Choisir..."} accentColor="orange" />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setStep(2)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <button onClick={() => setStep(5)} disabled={!fromCity || !toCity}
+                className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                {ar ? "التالي — تفاصيل الطلب" : "Suivant — Détails"}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: Drivers (INTRA only) ── */}
+        {step === 4 && transportType === "INTRA" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">{ar ? "السائقون المتاحون" : "Chauffeurs disponibles"}</h1>
-                <p className="text-sm text-slate-500 mt-0.5">{selectedWilaya} · {vLabel(selectedVehicle)}</p>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {selectedWilaya}
+                  {isTransporteur && ` · ${vLabel(selectedVehicle)}`}
+                </p>
               </div>
               <button onClick={fetchDrivers} disabled={loadingDrivers}
                 className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition">
@@ -315,23 +463,27 @@ export default function NewRequestPage() {
                 {[1,2,3].map(i => (
                   <div key={i} className="card-premium p-4 flex items-center gap-3 animate-pulse">
                     <div className="w-12 h-12 bg-slate-100 rounded-2xl shrink-0" />
-                    <div className="flex-1 space-y-2"><div className="h-4 bg-slate-100 rounded-full w-1/2" /><div className="h-3 bg-slate-100 rounded-full w-1/3" /></div>
-                    <div className="w-20 h-9 bg-slate-100 rounded-xl" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-slate-100 rounded-full w-1/2" />
+                      <div className="h-3 bg-slate-100 rounded-full w-1/3" />
+                    </div>
                   </div>
                 ))}
               </div>
             ) : drivers.length === 0 ? (
               <div className="card-premium p-12 text-center">
                 <div className="text-5xl mb-3">😔</div>
-                <p className="font-bold text-slate-700">{ar ? "لا يوجد سائقون متاحون الآن" : "Aucun chauffeur disponible"}</p>
-                <p className="text-sm text-slate-400 mt-1">{ar ? "حاول لاحقاً أو عدّل اختيارك" : "Réessayez plus tard"}</p>
-                <button onClick={() => setStep(2)} className="mt-4 text-orange-500 text-sm font-semibold hover:text-orange-600">
+                <p className="font-bold text-slate-700">{ar ? "لا يوجد سائقون متاحون" : "Aucun chauffeur disponible"}</p>
+                <p className="text-sm text-slate-400 mt-1">{ar ? "حاول لاحقاً" : "Réessayez plus tard"}</p>
+                <button onClick={() => setStep(3)} className="mt-4 text-orange-500 text-sm font-semibold hover:text-orange-600">
                   {ar ? "← تعديل الاختيار" : "← Modifier"}
                 </button>
               </div>
             ) : (
               <>
-                <p className="text-xs font-semibold text-slate-400">{drivers.length} {ar ? "سائق متاح" : "chauffeur(s)"}</p>
+                <p className="text-xs font-semibold text-slate-400">
+                  {drivers.length} {ar ? "سائق متاح" : "chauffeur(s)"}
+                </p>
                 <div className="space-y-3">
                   {drivers.map(d => (
                     <button key={d.id} type="button"
@@ -349,7 +501,7 @@ export default function NewRequestPage() {
                             d.isOnline ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"
                           }`}>
                             {d.isOnline
-                              ? <><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />{ar ? "متاح الآن" : "En ligne"}</>
+                              ? <><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />{ar ? "متاح" : "En ligne"}</>
                               : <><WifiOff className="w-2.5 h-2.5" />{ar ? "غير متاح" : "Hors ligne"}</>
                             }
                           </div>
@@ -357,9 +509,21 @@ export default function NewRequestPage() {
                         <div className="flex items-center gap-2">
                           <Stars n={d.avgRating} />
                           {d.avgRating != null && <span className="text-xs font-semibold text-slate-600">{d.avgRating.toFixed(1)}</span>}
-                          {d.totalRatings > 0 && <span className="text-xs text-slate-400">({d.totalRatings} {ar ? "تقييم" : "avis"})</span>}
+                          {d.totalRatings > 0 && <span className="text-xs text-slate-400">({d.totalRatings})</span>}
                         </div>
-                        <p className="text-xs text-slate-400 mt-0.5">{vLabel(d.vehicleType ?? "")}</p>
+                        {/* Vehicle line — show type + colored dot for transporteur */}
+                        {isTransporteur && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <p className="text-xs text-slate-500">{vLabel(d.vehicleType)}</p>
+                            {d.vehicleColor && (
+                              <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                                <span className="w-3 h-3 rounded-full border border-slate-300"
+                                  style={{ background: COLOR_HEX[d.vehicleColor] || "#94A3B8" }} />
+                                {cLabel(d.vehicleColor)}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                         selectedDriver?.id === d.id ? "bg-orange-500 border-orange-500" : "border-slate-200"
@@ -373,56 +537,33 @@ export default function NewRequestPage() {
             )}
 
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setStep(2)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+              <button onClick={() => setStep(3)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
                 <ArrowLeft className="w-4 h-4" />
               </button>
-              <button onClick={() => setStep(4)} disabled={!selectedDriver}
+              <button onClick={() => setStep(5)} disabled={!selectedDriver}
                 className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
-                {ar ? "التالي — تفاصيل الطلب" : "Suivant — Détails"}
+                {ar ? "التالي" : "Suivant"}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
 
-        {/* ── STEP 3: INTER — from/to ── */}
-        {step === 3 && transportType === "INTER" && (
+        {/* ── STEP 5: Details ── */}
+        {step === 5 && (
           <div className="space-y-5">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 mb-1">{ar ? "من أين إلى أين؟" : "D'où vers où ?"}</h1>
-              <p className="text-slate-500 text-sm">{ar ? "حدد مدينة الانطلاق والوصول" : "Sélectionnez les wilayas de départ et d'arrivée"}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">{ar ? "ولاية الانطلاق" : "Wilaya de départ"}</label>
-              <WilayaDropdown value={fromCity} onChange={setFromCity}
-                placeholder={ar ? "اختر ولاية الانطلاق..." : "Choisir la wilaya de départ..."} accentColor="blue" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">{ar ? "ولاية الوصول" : "Wilaya d'arrivée"}</label>
-              <WilayaDropdown value={toCity} onChange={setToCity}
-                placeholder={ar ? "اختر ولاية الوصول..." : "Choisir la wilaya d'arrivée..."} accentColor="orange" />
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setStep(1)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <button onClick={() => setStep(4)} disabled={!fromCity || !toCity}
-                className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
-                {ar ? "التالي — تفاصيل الطلب" : "Suivant — Détails"}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── STEP 4: Details ── */}
-        {step === 4 && (
-          <div className="space-y-5">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 mb-2">{ar ? "تفاصيل الطلب" : "Détails de la commande"}</h1>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">
+                {isFrodeur
+                  ? (ar ? "تفاصيل الرحلة" : "Détails de la course")
+                  : (ar ? "تفاصيل الطلب" : "Détails de la commande")}
+              </h1>
               <div className="flex flex-wrap gap-2">
                 <span className="text-xs bg-[#0A1628] text-white font-semibold px-3 py-1 rounded-full">
                   {transportType === "INTRA" ? selectedWilaya : `${fromCity} → ${toCity}`}
+                </span>
+                <span className="text-xs bg-purple-100 text-purple-700 font-semibold px-3 py-1 rounded-full">
+                  {ar ? services.find(s => s.key === serviceCategory)?.titleAr : services.find(s => s.key === serviceCategory)?.titleFr}
                 </span>
                 {transportType === "INTRA" && selectedDriver && (
                   <span className="text-xs bg-orange-100 text-orange-700 font-semibold px-3 py-1 rounded-full flex items-center gap-1">
@@ -434,55 +575,88 @@ export default function NewRequestPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{ar ? "عنوان الاستلام" : "Adresse de ramassage"}</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  {isFrodeur ? (ar ? "نقطة الانطلاق" : "Point de départ") : (ar ? "عنوان الاستلام" : "Adresse de ramassage")}
+                </label>
                 <input value={fromAddress} onChange={e => setFromAddress(e.target.value)}
                   placeholder={ar ? "الحي، الشارع..." : "Quartier, rue..."} className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{ar ? "عنوان التسليم" : "Adresse de livraison"}</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  {isFrodeur ? (ar ? "الوجهة" : "Destination") : (ar ? "عنوان التسليم" : "Adresse de livraison")}
+                </label>
                 <input value={toAddress} onChange={e => setToAddress(e.target.value)}
                   placeholder={ar ? "الحي، الشارع..." : "Quartier, rue..."} className={inputCls} />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">{ar ? "نوع البضاعة" : "Type de marchandise"}</label>
-              <div className="grid grid-cols-3 gap-2">
-                {GOODS_TYPES.map(g => (
-                  <button key={g.value} type="button" onClick={() => setGoodsType(g.value)}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
-                      goodsType === g.value ? "border-orange-500 bg-orange-50 shadow-sm" : "border-slate-100 bg-white hover:border-orange-200"
-                    }`}>
-                    <span className="text-xl">{g.icon}</span>
-                    <span className="text-xs font-semibold text-slate-700 leading-tight text-center">{ar ? g.labelAr : g.labelFr}</span>
-                  </button>
-                ))}
+            {/* Goods type + weight only for transporteur (and optional livreur) */}
+            {!isFrodeur && (
+              <>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    {ar ? "نوع البضاعة" : "Type"}{!isTransporteur && <span className="text-slate-400 font-normal ms-1">({ar ? "اختياري" : "facultatif"})</span>}
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {GOODS_TYPES.map(g => (
+                      <button key={g.value} type="button" onClick={() => setGoodsType(g.value)}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
+                          goodsType === g.value ? "border-orange-500 bg-orange-50" : "border-slate-100 bg-white hover:border-orange-200"
+                        }`}>
+                        <span className="text-xl">{g.icon}</span>
+                        <span className="text-xs font-semibold text-slate-700 leading-tight text-center">{ar ? g.labelAr : g.labelFr}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    {ar ? "الوزن التقريبي (كغ)" : "Poids approximatif (kg)"}
+                    {!isTransporteur && <span className="text-slate-400 font-normal ms-1">({ar ? "اختياري" : "facultatif"})</span>}
+                  </label>
+                  <input type="number" value={weight} onChange={e => setWeight(e.target.value)}
+                    placeholder="ex: 200" min="1" className={inputCls} />
+                </div>
+              </>
+            )}
+
+            {isFrodeur && (
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3">
+                <CarTaxiFront className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  {ar
+                    ? "السائق سيقترح السعر بعد قبول الرحلة. الأدمين يأخذ 10% من كل رحلة."
+                    : "Le chauffeur proposera le prix après acceptation. L'admin prend 10% de chaque course."}
+                </p>
               </div>
-            </div>
+            )}
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">{ar ? "الوزن التقريبي (كغ)" : "Poids approximatif (kg)"}</label>
-              <input type="number" value={weight} onChange={e => setWeight(e.target.value)}
-                placeholder="ex: 200" min="1" className={inputCls} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">{ar ? "ملاحظات (اختياري)" : "Notes (facultatif)"}</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                {ar ? "ملاحظات (اختياري)" : "Notes (facultatif)"}
+              </label>
               <textarea value={description} onChange={e => setDescription(e.target.value)}
                 placeholder={ar ? "تفاصيل إضافية..." : "Détails supplémentaires..."} rows={3}
                 className={`${inputCls} resize-none`} />
             </div>
 
             <div className="flex gap-3 pt-1">
-              <button onClick={() => setStep(3)} className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+              <button onClick={() => setStep(transportType === "INTRA" ? 4 : 3)}
+                className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
                 <ArrowLeft className="w-4 h-4" />
               </button>
-              <button onClick={handleSubmit} disabled={submitting || !goodsType || !weight}
-                className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2">
-                {submitting
-                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{ar ? "جارٍ الإرسال..." : "Envoi..."}</>
-                  : <>{ar ? "إرسال الطلب 🚀" : "Envoyer la demande 🚀"}</>
-                }
+              <button onClick={handleSubmit}
+                disabled={submitting || (isTransporteur && (!goodsType || !weight))}
+                className="flex-1 btn-primary disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                {submitting ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    {ar ? "إرسال الطلب" : "Envoyer la demande"}
+                    <CheckCircle className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </div>
           </div>
