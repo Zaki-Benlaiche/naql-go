@@ -21,10 +21,13 @@ export async function GET() {
       },
       include: {
         transporter: { select: { id: true, name: true, phone: true } },
-        request:     { select: { fromCity: true, toCity: true, updatedAt: true } },
+        request:     { select: { fromCity: true, toCity: true, deliveredAt: true, updatedAt: true } },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    const deliveredAtOf = (b: typeof deliveredBids[number]) =>
+      b.request.deliveredAt ?? b.request.updatedAt;
 
     const now          = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -51,7 +54,7 @@ export async function GET() {
       entry.deliveries++;
       entry.totalGross      += b.price;
       entry.totalCommission += b.price * COMMISSION;
-      if (new Date(b.createdAt) >= startOfMonth) {
+      if (deliveredAtOf(b) >= startOfMonth) {
         entry.thisMonthGross      += b.price;
         entry.thisMonthCommission += b.price * COMMISSION;
       }
@@ -62,7 +65,7 @@ export async function GET() {
 
     const totalCommission      = deliveredBids.reduce((s, b) => s + b.price * COMMISSION, 0);
     const thisMonthCommission  = deliveredBids
-      .filter(b => new Date(b.createdAt) >= startOfMonth)
+      .filter(b => deliveredAtOf(b) >= startOfMonth)
       .reduce((s, b) => s + b.price * COMMISSION, 0);
     const totalDeliveries      = deliveredBids.length;
     const totalGross           = deliveredBids.reduce((s, b) => s + b.price, 0);

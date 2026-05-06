@@ -22,7 +22,7 @@ export async function GET() {
       },
       include: {
         request: {
-          select: { fromCity: true, toCity: true, updatedAt: true },
+          select: { fromCity: true, toCity: true, deliveredAt: true, updatedAt: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -30,12 +30,14 @@ export async function GET() {
 
     const now         = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const deliveredAtOf = (b: typeof deliveredBids[number]) =>
+      b.request.deliveredAt ?? b.request.updatedAt;
 
     let totalGross = 0, thisMonthGross = 0;
 
     for (const b of deliveredBids) {
       totalGross += b.price;
-      if (new Date(b.createdAt) >= startOfMonth) thisMonthGross += b.price;
+      if (deliveredAtOf(b) >= startOfMonth) thisMonthGross += b.price;
     }
 
     const totalAdminFee      = totalGross      * COMMISSION;
@@ -63,7 +65,7 @@ export async function GET() {
         adminFee:    b.price * COMMISSION,
         fromCity:    b.request.fromCity,
         toCity:      b.request.toCity,
-        deliveredAt: b.request.updatedAt,
+        deliveredAt: deliveredAtOf(b),
       })),
     });
   } catch (error) {

@@ -73,6 +73,7 @@ model TransportRequest {
   scheduledAt   DateTime?
 
   status           String   @default("OPEN")
+  deliveredAt      DateTime?
   proofOfDelivery  String?
 
   discountPercent  Int?

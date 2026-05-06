@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { uploadBase64, deleteBlobUrl } from "@/lib/blob";
 
 export const dynamic = "force-dynamic";
 
@@ -39,13 +40,24 @@ export async function POST(req: NextRequest) {
     const validTypes = ["license", "vehicle_reg", "insurance", "other"];
     if (!validTypes.includes(type)) return NextResponse.json({ error: "نوع غير صالح" }, { status: 400 });
 
-    // Replace existing document of same type
-    await prisma.document.deleteMany({
+    // Replace existing document of same type — clean up its blob first.
+    const existing = await prisma.document.findMany({
       where: { transporterId: session.user.id, type },
+      select: { id: true, fileData: true },
     });
+    for (const e of existing) {
+      deleteBlobUrl(e.fileData).catch(() => {});
+    }
+    if (existing.length > 0) {
+      await prisma.document.deleteMany({
+        where: { id: { in: existing.map(e => e.id) } },
+      });
+    }
+
+    const url = await uploadBase64(`documents/${session.user.id}/${type}.jpg`, fileData);
 
     const doc = await prisma.document.create({
-      data: { transporterId: session.user.id, type, fileData, status: "PENDING" },
+      data: { transporterId: session.user.id, type, fileData: url, status: "PENDING" },
     });
 
     return NextResponse.json({ id: doc.id, type: doc.type, status: doc.status }, { status: 201 });

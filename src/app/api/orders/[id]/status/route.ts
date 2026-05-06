@@ -41,7 +41,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await prisma.transportRequest.update({
       where: { id },
-      data: { status },
+      data: {
+        status,
+        ...(status === "DELIVERED" ? { deliveredAt: new Date() } : {}),
+      },
     });
 
     // Notify client
