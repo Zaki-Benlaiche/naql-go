@@ -160,138 +160,80 @@ export default function Home() {
       )}
 
       {/* ════════════════════════════════════════════════════
-          HERO — Two-column with NAQL.png showcase
+          HERO — Centered
           ════════════════════════════════════════════════════ */}
       <section className="hero-bg relative">
         {/* Floating decorative blobs */}
         <div className="absolute top-20 start-10 w-72 h-72 bg-[#FF6B00] opacity-[0.08] blur-3xl rounded-full pointer-events-none" />
         <div className="absolute bottom-10 end-20 w-96 h-96 bg-[#2563EB] opacity-[0.06] blur-3xl rounded-full pointer-events-none" />
 
-        <div className="max-w-6xl mx-auto px-4 md:px-6 pt-12 md:pt-20 pb-20 md:pb-28 relative">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 pt-16 md:pt-24 pb-20 md:pb-28 text-center relative">
+          {/* Tagline badge */}
+          <div className="inline-flex items-center gap-2 bg-white text-[#FF6B00] text-xs md:text-sm font-semibold px-5 py-2.5 rounded-full mb-7 animate-slide-up"
+            style={{ boxShadow: "0 2px 12px rgba(255,107,0,0.12), 0 0 0 1px rgba(255,107,0,0.08)" }}>
+            <span className="w-2 h-2 bg-[#FF6B00] rounded-full animate-pulse-glow" />
+            {tr("tagline")}
+          </div>
 
-            {/* Left — Text */}
-            <div className="text-center lg:text-start order-2 lg:order-1">
-              {/* Tagline badge */}
-              <div className="inline-flex items-center gap-2 bg-white text-[#FF6B00] text-xs md:text-sm font-semibold px-5 py-2.5 rounded-full mb-7 animate-slide-up"
-                style={{ boxShadow: "0 2px 12px rgba(255,107,0,0.12), 0 0 0 1px rgba(255,107,0,0.08)" }}>
-                <span className="w-2 h-2 bg-[#FF6B00] rounded-full animate-pulse-glow" />
-                {tr("tagline")}
-              </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-[#0F172A] leading-[1.15] mb-6 animate-slide-up delay-100">
+            {tr("hero_title")}
+            <br />
+            <span className="gradient-text">{tr("hero_title2")}</span>
+          </h1>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-[#0F172A] leading-[1.15] mb-6 animate-slide-up delay-100">
-                {tr("hero_title")}
-                <br />
-                <span className="gradient-text">{tr("hero_title2")}</span>
-              </h1>
+          <p className="text-base md:text-xl text-[#64748B] max-w-2xl mx-auto mb-10 px-2 animate-slide-up delay-200 leading-relaxed">
+            {tr("hero_sub")}
+          </p>
 
-              <p className="text-base md:text-xl text-[#64748B] max-w-xl lg:max-w-none mx-auto lg:mx-0 mb-10 px-2 lg:px-0 animate-slide-up delay-200 leading-relaxed">
-                {tr("hero_sub")}
-              </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 animate-slide-up delay-300">
+            <Link href="/register?role=CLIENT"
+              className="w-full sm:w-auto btn-primary text-white font-semibold px-7 py-4 rounded-2xl text-base md:text-lg flex items-center justify-center gap-2.5">
+              <Package className="w-5 h-5" />
+              {tr("btn_client")}
+              <ArrowIcon className="w-5 h-5" />
+            </Link>
+            <Link href="/register?role=TRANSPORTER"
+              className="w-full sm:w-auto btn-secondary text-[#0F172A] font-semibold px-7 py-4 rounded-2xl text-base md:text-lg flex items-center justify-center gap-2.5">
+              <Truck className="w-5 h-5 text-[#FF6B00]" />
+              {tr("btn_transporter")}
+            </Link>
+          </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 md:gap-4 animate-slide-up delay-300">
-                <Link href="/register?role=CLIENT"
-                  className="w-full sm:w-auto btn-primary text-white font-semibold px-7 py-4 rounded-2xl text-base md:text-lg flex items-center justify-center gap-2.5">
-                  <Package className="w-5 h-5" />
-                  {tr("btn_client")}
-                  <ArrowIcon className="w-5 h-5" />
-                </Link>
-                <Link href="/register?role=TRANSPORTER"
-                  className="w-full sm:w-auto btn-secondary text-[#0F172A] font-semibold px-7 py-4 rounded-2xl text-base md:text-lg flex items-center justify-center gap-2.5">
-                  <Truck className="w-5 h-5 text-[#FF6B00]" />
-                  {tr("btn_transporter")}
-                </Link>
-              </div>
-
-              {/* Trust indicators */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-6 mt-10 animate-slide-up delay-400">
-                <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#64748B]">
-                  <Shield className="w-4 h-4 text-[#10B981]" />
-                  <span>{isRTL ? "آمن 100%" : "100% Sécurisé"}</span>
-                </div>
-                <div className="w-1 h-1 bg-gray-300 rounded-full" />
-                <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#64748B]">
-                  <Zap className="w-4 h-4 text-[#FF6B00]" />
-                  <span>{isRTL ? "تسجيل مجاني" : "Inscription gratuite"}</span>
-                </div>
-                <div className="w-1 h-1 bg-gray-300 rounded-full hidden sm:block" />
-                <div className="hidden sm:flex items-center gap-1.5 text-xs md:text-sm text-[#64748B]">
-                  <MapPin className="w-4 h-4 text-[#2563EB]" />
-                  <span>{isRTL ? "كل الولايات" : "Toutes les wilayas"}</span>
-                </div>
-              </div>
-
-              {/* Avatars + rating */}
-              <div className="mt-8 flex items-center justify-center lg:justify-start gap-4 animate-slide-up delay-500">
-                <div className="flex">
-                  {["#FF6B00","#2563EB","#10B981","#F59E0B"].map((c, i) => (
-                    <div key={i} className={`w-9 h-9 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm ${i > 0 ? "-ms-2" : ""}`}
-                      style={{ background: `linear-gradient(135deg, ${c}, ${c}cc)` }}>
-                      {["A","M","L","K"][i]}
-                    </div>
-                  ))}
-                </div>
-                <div className="text-start">
-                  <div className="flex items-center gap-0.5 text-amber-400">
-                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
-                    <span className="text-xs font-bold text-[#0F172A] ms-1">4.8</span>
-                  </div>
-                  <div className="text-[11px] text-[#64748B]">
-                    {isRTL ? "أكثر من 2000 عميل سعيد" : "Plus de 2000 clients satisfaits"}
-                  </div>
-                </div>
-              </div>
+          {/* Trust indicators */}
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-10 animate-slide-up delay-400">
+            <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#64748B]">
+              <Shield className="w-4 h-4 text-[#10B981]" />
+              <span>{isRTL ? "آمن 100%" : "100% Sécurisé"}</span>
             </div>
+            <div className="w-1 h-1 bg-gray-300 rounded-full" />
+            <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#64748B]">
+              <Zap className="w-4 h-4 text-[#FF6B00]" />
+              <span>{isRTL ? "تسجيل مجاني" : "Inscription gratuite"}</span>
+            </div>
+            <div className="w-1 h-1 bg-gray-300 rounded-full hidden sm:block" />
+            <div className="hidden sm:flex items-center gap-1.5 text-xs md:text-sm text-[#64748B]">
+              <MapPin className="w-4 h-4 text-[#2563EB]" />
+              <span>{isRTL ? "كل الولايات" : "Toutes les wilayas"}</span>
+            </div>
+          </div>
 
-            {/* Right — Image showcase */}
-            <div className="order-1 lg:order-2 relative animate-slide-up delay-200">
-              {/* Glow behind */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B00]/20 via-[#2563EB]/10 to-transparent blur-2xl rounded-[3rem]" />
-
-              <div className="relative">
-                <Image
-                  src="/NAQL.png"
-                  alt="NaqlGo platform showcase"
-                  width={600}
-                  height={750}
-                  priority
-                  className="relative w-full max-w-md mx-auto drop-shadow-2xl"
-                  style={{ filter: "drop-shadow(0 25px 50px rgba(15,23,42,0.15))" }}
-                />
-
-                {/* Floating stat card — top */}
-                <div className="absolute top-6 -start-2 md:-start-8 bg-white rounded-2xl shadow-xl p-3 md:p-4 flex items-center gap-2.5 animate-float"
-                  style={{ animationDelay: "0.3s" }}>
-                  <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center shrink-0">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                  </div>
-                  <div className="text-start">
-                    <div className="text-[10px] md:text-xs text-[#64748B]">{isRTL ? "تم التسليم" : "Livré"}</div>
-                    <div className="text-xs md:text-sm font-bold text-[#0F172A]">+500 {isRTL ? "اليوم" : "aujourd'hui"}</div>
-                  </div>
+          {/* Avatars + rating */}
+          <div className="mt-8 flex items-center justify-center gap-4 animate-slide-up delay-500">
+            <div className="flex">
+              {["#FF6B00","#2563EB","#10B981","#F59E0B"].map((c, i) => (
+                <div key={i} className={`w-9 h-9 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm ${i > 0 ? "-ms-2" : ""}`}
+                  style={{ background: `linear-gradient(135deg, ${c}, ${c}cc)` }}>
+                  {["A","M","L","K"][i]}
                 </div>
-
-                {/* Floating stat card — bottom */}
-                <div className="absolute bottom-10 -end-2 md:-end-6 bg-white rounded-2xl shadow-xl p-3 md:p-4 flex items-center gap-2.5 animate-float"
-                  style={{ animationDelay: "0.8s" }}>
-                  <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-[#FF6B00] to-[#E65100] flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                  </div>
-                  <div className="text-start">
-                    <div className="text-[10px] md:text-xs text-[#64748B]">{isRTL ? "نمو الأسبوع" : "Cette semaine"}</div>
-                    <div className="text-xs md:text-sm font-bold text-[#0F172A]">+24% 📈</div>
-                  </div>
-                </div>
-
-                {/* Floating live tracking — middle */}
-                <div className="hidden md:flex absolute top-1/2 -translate-y-1/2 -end-10 bg-white rounded-2xl shadow-xl p-3 items-center gap-2 animate-float"
-                  style={{ animationDelay: "1.2s" }}>
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
-                  </span>
-                  <span className="text-xs font-semibold text-[#0F172A]">{isRTL ? "تتبع مباشر" : "Suivi live"}</span>
-                </div>
+              ))}
+            </div>
+            <div className="text-start">
+              <div className="flex items-center gap-0.5 text-amber-400">
+                {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
+                <span className="text-xs font-bold text-[#0F172A] ms-1">4.8</span>
+              </div>
+              <div className="text-[11px] text-[#64748B]">
+                {isRTL ? "أكثر من 2000 عميل سعيد" : "Plus de 2000 clients satisfaits"}
               </div>
             </div>
           </div>
