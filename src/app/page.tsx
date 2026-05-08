@@ -1,10 +1,12 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Package, Clock, Star, ArrowLeft, ArrowRight, CheckCircle, Menu, X, Globe,
   Truck, Sofa, HardHat, Thermometer, Container, Shield, MapPin, Zap,
-  Phone, Mail, Sparkles, Download, Smartphone, Apple,
+  Phone, Mail, Sparkles, Download, Smartphone, Apple, Quote,
+  TrendingUp, Award, ChevronRight,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
@@ -13,6 +15,7 @@ export default function Home() {
   const { lang, setLang, tr } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const ArrowIcon = lang === "ar" ? ArrowLeft : ArrowRight;
+  const isRTL = lang === "ar";
 
   const steps = [
     { icon: Package, title: tr("step1_title"), desc: tr("step1_desc"), color: "service-icon-orange" },
@@ -42,8 +45,34 @@ export default function Home() {
     { title: tr("feat4_title"), desc: tr("feat4_desc"), icon: Clock },
   ];
 
+  const testimonials = isRTL
+    ? [
+        { name: "أحمد بن علي", role: "صاحب متجر — الجزائر", text: "خدمة سريعة وموثوقة، وفّرت عليّ الوقت والمال. النقّالين متعاونين والأسعار منافسة.", rating: 5 },
+        { name: "ليلى مرابط",  role: "تاجرة بالجملة — وهران", text: "منصّة احترافية، استلمت عروض في دقائق واخترت الأنسب. التتبع المباشر مذهل!", rating: 5 },
+        { name: "كريم بوزيد",  role: "ناقل — قسنطينة",      text: "كناقل، NaqlGo يوفر لي طلبات يومية وعملاء جديين. المنصة سهلة وعادلة.", rating: 5 },
+      ]
+    : [
+        { name: "Ahmed Benali",   role: "Commerçant — Alger",       text: "Service rapide et fiable. Les transporteurs sont coopératifs et les prix imbattables.", rating: 5 },
+        { name: "Leila Marabet",  role: "Grossiste — Oran",         text: "Plateforme professionnelle, j'ai reçu des offres en quelques minutes. Le suivi en direct est génial !", rating: 5 },
+        { name: "Karim Bouzid",   role: "Transporteur — Constantine", text: "En tant que transporteur, NaqlGo me fournit des commandes quotidiennes et des clients sérieux.", rating: 5 },
+      ];
+
+  const partners = ["DHL", "Aramex", "Yalidine", "ZR Express", "Maystro"];
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
+
+      {/* ── Top announcement bar ── */}
+      <div className="bg-gradient-to-r from-[#FF6B00] via-[#E65100] to-[#FF6B00] text-white text-xs md:text-sm py-2 px-4 text-center relative overflow-hidden">
+        <div className="max-w-6xl mx-auto flex items-center justify-center gap-2 relative z-10">
+          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+          <span className="font-medium">
+            {isRTL
+              ? "🚀 منصة النقل الأولى في الجزائر — التسجيل مجاني الآن"
+              : "🚀 La 1ère plateforme de transport en Algérie — Inscription gratuite"}
+          </span>
+        </div>
+      </div>
 
       {/* ── Navbar ── */}
       <nav className="border-b border-gray-100/80 px-4 md:px-6 py-3.5 sticky top-0 bg-white/90 backdrop-blur-xl z-50"
@@ -53,7 +82,23 @@ export default function Home() {
             <NaqlGoLogo size="sm" />
           </Link>
 
-          {/* Desktop nav */}
+          {/* Desktop nav links */}
+          <div className="hidden lg:flex items-center gap-7">
+            <a href="#how" className="text-sm font-medium text-gray-600 hover:text-[#FF6B00] transition-colors">
+              {isRTL ? "كيف يعمل" : "Comment ça marche"}
+            </a>
+            <a href="#services" className="text-sm font-medium text-gray-600 hover:text-[#FF6B00] transition-colors">
+              {isRTL ? "الخدمات" : "Services"}
+            </a>
+            <a href="#platform" className="text-sm font-medium text-gray-600 hover:text-[#FF6B00] transition-colors">
+              {isRTL ? "المنصة" : "Plateforme"}
+            </a>
+            <a href="#download" className="text-sm font-medium text-gray-600 hover:text-[#FF6B00] transition-colors">
+              {isRTL ? "التطبيق" : "Application"}
+            </a>
+          </div>
+
+          {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-3">
             <button onClick={() => setLang(lang === "ar" ? "fr" : "ar")}
               className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-[#FF6B00] hover:text-[#FF6B00] transition-all">
@@ -114,80 +159,189 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Hero ── */}
-      <section className="hero-bg">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 pt-16 md:pt-24 pb-20 md:pb-32 text-center relative">
-          {/* Tagline badge */}
-          <div className="inline-flex items-center gap-2 bg-white text-[#FF6B00] text-xs md:text-sm font-semibold px-5 py-2.5 rounded-full mb-7 animate-slide-up"
-            style={{ boxShadow: "0 2px 12px rgba(255,107,0,0.12), 0 0 0 1px rgba(255,107,0,0.08)" }}>
-            <span className="w-2 h-2 bg-[#FF6B00] rounded-full animate-pulse-glow" />
-            {tr("tagline")}
+      {/* ════════════════════════════════════════════════════
+          HERO — Two-column with NAQL.png showcase
+          ════════════════════════════════════════════════════ */}
+      <section className="hero-bg relative">
+        {/* Floating decorative blobs */}
+        <div className="absolute top-20 start-10 w-72 h-72 bg-[#FF6B00] opacity-[0.08] blur-3xl rounded-full pointer-events-none" />
+        <div className="absolute bottom-10 end-20 w-96 h-96 bg-[#2563EB] opacity-[0.06] blur-3xl rounded-full pointer-events-none" />
+
+        <div className="max-w-6xl mx-auto px-4 md:px-6 pt-12 md:pt-20 pb-20 md:pb-28 relative">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+            {/* Left — Text */}
+            <div className="text-center lg:text-start order-2 lg:order-1">
+              {/* Tagline badge */}
+              <div className="inline-flex items-center gap-2 bg-white text-[#FF6B00] text-xs md:text-sm font-semibold px-5 py-2.5 rounded-full mb-7 animate-slide-up"
+                style={{ boxShadow: "0 2px 12px rgba(255,107,0,0.12), 0 0 0 1px rgba(255,107,0,0.08)" }}>
+                <span className="w-2 h-2 bg-[#FF6B00] rounded-full animate-pulse-glow" />
+                {tr("tagline")}
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-[#0F172A] leading-[1.15] mb-6 animate-slide-up delay-100">
+                {tr("hero_title")}
+                <br />
+                <span className="gradient-text">{tr("hero_title2")}</span>
+              </h1>
+
+              <p className="text-base md:text-xl text-[#64748B] max-w-xl lg:max-w-none mx-auto lg:mx-0 mb-10 px-2 lg:px-0 animate-slide-up delay-200 leading-relaxed">
+                {tr("hero_sub")}
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 md:gap-4 animate-slide-up delay-300">
+                <Link href="/register?role=CLIENT"
+                  className="w-full sm:w-auto btn-primary text-white font-semibold px-7 py-4 rounded-2xl text-base md:text-lg flex items-center justify-center gap-2.5">
+                  <Package className="w-5 h-5" />
+                  {tr("btn_client")}
+                  <ArrowIcon className="w-5 h-5" />
+                </Link>
+                <Link href="/register?role=TRANSPORTER"
+                  className="w-full sm:w-auto btn-secondary text-[#0F172A] font-semibold px-7 py-4 rounded-2xl text-base md:text-lg flex items-center justify-center gap-2.5">
+                  <Truck className="w-5 h-5 text-[#FF6B00]" />
+                  {tr("btn_transporter")}
+                </Link>
+              </div>
+
+              {/* Trust indicators */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-6 mt-10 animate-slide-up delay-400">
+                <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#64748B]">
+                  <Shield className="w-4 h-4 text-[#10B981]" />
+                  <span>{isRTL ? "آمن 100%" : "100% Sécurisé"}</span>
+                </div>
+                <div className="w-1 h-1 bg-gray-300 rounded-full" />
+                <div className="flex items-center gap-1.5 text-xs md:text-sm text-[#64748B]">
+                  <Zap className="w-4 h-4 text-[#FF6B00]" />
+                  <span>{isRTL ? "تسجيل مجاني" : "Inscription gratuite"}</span>
+                </div>
+                <div className="w-1 h-1 bg-gray-300 rounded-full hidden sm:block" />
+                <div className="hidden sm:flex items-center gap-1.5 text-xs md:text-sm text-[#64748B]">
+                  <MapPin className="w-4 h-4 text-[#2563EB]" />
+                  <span>{isRTL ? "كل الولايات" : "Toutes les wilayas"}</span>
+                </div>
+              </div>
+
+              {/* Avatars + rating */}
+              <div className="mt-8 flex items-center justify-center lg:justify-start gap-4 animate-slide-up delay-500">
+                <div className="flex">
+                  {["#FF6B00","#2563EB","#10B981","#F59E0B"].map((c, i) => (
+                    <div key={i} className={`w-9 h-9 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm ${i > 0 ? "-ms-2" : ""}`}
+                      style={{ background: `linear-gradient(135deg, ${c}, ${c}cc)` }}>
+                      {["A","M","L","K"][i]}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-start">
+                  <div className="flex items-center gap-0.5 text-amber-400">
+                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
+                    <span className="text-xs font-bold text-[#0F172A] ms-1">4.8</span>
+                  </div>
+                  <div className="text-[11px] text-[#64748B]">
+                    {isRTL ? "أكثر من 2000 عميل سعيد" : "Plus de 2000 clients satisfaits"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right — Image showcase */}
+            <div className="order-1 lg:order-2 relative animate-slide-up delay-200">
+              {/* Glow behind */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FF6B00]/20 via-[#2563EB]/10 to-transparent blur-2xl rounded-[3rem]" />
+
+              <div className="relative">
+                <Image
+                  src="/NAQL.png"
+                  alt="NaqlGo platform showcase"
+                  width={600}
+                  height={750}
+                  priority
+                  className="relative w-full max-w-md mx-auto drop-shadow-2xl"
+                  style={{ filter: "drop-shadow(0 25px 50px rgba(15,23,42,0.15))" }}
+                />
+
+                {/* Floating stat card — top */}
+                <div className="absolute top-6 -start-2 md:-start-8 bg-white rounded-2xl shadow-xl p-3 md:p-4 flex items-center gap-2.5 animate-float"
+                  style={{ animationDelay: "0.3s" }}>
+                  <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center shrink-0">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                  </div>
+                  <div className="text-start">
+                    <div className="text-[10px] md:text-xs text-[#64748B]">{isRTL ? "تم التسليم" : "Livré"}</div>
+                    <div className="text-xs md:text-sm font-bold text-[#0F172A]">+500 {isRTL ? "اليوم" : "aujourd'hui"}</div>
+                  </div>
+                </div>
+
+                {/* Floating stat card — bottom */}
+                <div className="absolute bottom-10 -end-2 md:-end-6 bg-white rounded-2xl shadow-xl p-3 md:p-4 flex items-center gap-2.5 animate-float"
+                  style={{ animationDelay: "0.8s" }}>
+                  <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-[#FF6B00] to-[#E65100] flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                  </div>
+                  <div className="text-start">
+                    <div className="text-[10px] md:text-xs text-[#64748B]">{isRTL ? "نمو الأسبوع" : "Cette semaine"}</div>
+                    <div className="text-xs md:text-sm font-bold text-[#0F172A]">+24% 📈</div>
+                  </div>
+                </div>
+
+                {/* Floating live tracking — middle */}
+                <div className="hidden md:flex absolute top-1/2 -translate-y-1/2 -end-10 bg-white rounded-2xl shadow-xl p-3 items-center gap-2 animate-float"
+                  style={{ animationDelay: "1.2s" }}>
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                  </span>
+                  <span className="text-xs font-semibold text-[#0F172A]">{isRTL ? "تتبع مباشر" : "Suivi live"}</span>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-[3.5rem] font-bold text-[#0F172A] leading-[1.15] mb-6 animate-slide-up delay-100">
-            {tr("hero_title")}
-            <br />
-            <span className="gradient-text">{tr("hero_title2")}</span>
-          </h1>
+        {/* Wave divider */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-b from-transparent to-white pointer-events-none" />
+      </section>
 
-          <p className="text-base md:text-xl text-[#64748B] max-w-2xl mx-auto mb-10 md:mb-12 px-2 animate-slide-up delay-200 leading-relaxed">
-            {tr("hero_sub")}
+      {/* ── Partners strip ── */}
+      <section className="py-8 md:py-10 bg-white border-y border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 md:px-6">
+          <p className="text-center text-xs md:text-sm text-[#94A3B8] font-medium mb-5 uppercase tracking-widest">
+            {isRTL ? "موثوق به من قبل" : "Ils nous font confiance"}
           </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 animate-slide-up delay-300">
-            <Link href="/register?role=CLIENT"
-              className="w-full sm:w-auto btn-primary text-white font-semibold px-8 py-4 rounded-2xl text-base md:text-lg flex items-center justify-center gap-2.5">
-              <Package className="w-5 h-5" />
-              {tr("btn_client")}
-              <ArrowIcon className="w-5 h-5" />
-            </Link>
-            <Link href="/register?role=TRANSPORTER"
-              className="w-full sm:w-auto btn-secondary text-[#0F172A] font-semibold px-8 py-4 rounded-2xl text-base md:text-lg flex items-center justify-center gap-2.5">
-              <Truck className="w-5 h-5 text-[#FF6B00]" />
-              {tr("btn_transporter")}
-            </Link>
-          </div>
-
-          {/* Trust indicators */}
-          <div className="flex items-center justify-center gap-6 mt-10 animate-slide-up delay-400">
-            <div className="flex items-center gap-1.5 text-xs text-[#64748B]">
-              <Shield className="w-3.5 h-3.5 text-[#10B981]" />
-              <span>{lang === "ar" ? "آمن 100%" : "100% Sécurisé"}</span>
-            </div>
-            <div className="w-1 h-1 bg-gray-300 rounded-full" />
-            <div className="flex items-center gap-1.5 text-xs text-[#64748B]">
-              <Zap className="w-3.5 h-3.5 text-[#FF6B00]" />
-              <span>{lang === "ar" ? "تسجيل مجاني" : "Inscription gratuite"}</span>
-            </div>
-            <div className="w-1 h-1 bg-gray-300 rounded-full hidden sm:block" />
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-[#64748B]">
-              <MapPin className="w-3.5 h-3.5 text-[#2563EB]" />
-              <span>{lang === "ar" ? "كل الولايات" : "Toutes les wilayas"}</span>
-            </div>
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 opacity-60">
+            {partners.map((p, i) => (
+              <div key={i} className="text-base md:text-xl font-bold text-[#64748B] hover:text-[#0F172A] transition-colors">
+                {p}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── How it works ── */}
-      <section className="py-16 md:py-24 bg-white">
+      {/* ════════════════════════════════════════════════════
+          HOW IT WORKS
+          ════════════════════════════════════════════════════ */}
+      <section id="how" className="py-16 md:py-24 bg-white relative">
         <div className="max-w-6xl mx-auto px-4 md:px-6">
           <div className="text-center mb-12 md:mb-16">
             <span className="badge badge-orange mb-4 inline-flex">
               <Sparkles className="w-3 h-3" />
-              {lang === "ar" ? "سهل وبسيط" : "Simple et facile"}
+              {isRTL ? "سهل وبسيط" : "Simple et facile"}
             </span>
             <h2 className="text-2xl md:text-4xl font-bold text-[#0F172A] mb-3">{tr("how_title")}</h2>
             <p className="text-[#64748B] text-sm md:text-base max-w-lg mx-auto">{tr("how_sub")}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8 relative">
+            {/* Connecting dotted line for desktop */}
+            <div className="hidden md:block absolute top-20 start-[16%] end-[16%] h-px border-t-2 border-dashed border-orange-200 -z-0" />
+
             {steps.map((step, i) => (
-              <div key={i} className="card-premium p-7 md:p-8 text-center group">
+              <div key={i} className="card-premium p-7 md:p-8 text-center group relative bg-white">
+                <div className="absolute top-4 end-4 w-8 h-8 rounded-full bg-gradient-to-br from-[#FF6B00] to-[#E65100] text-white text-xs font-bold flex items-center justify-center shadow-md">
+                  {i + 1}
+                </div>
                 <div className={`service-icon ${step.color} mx-auto mb-5 group-hover:scale-110 transition-transform`}>
                   <step.icon className="w-6 h-6" />
-                </div>
-                <div className="text-5xl font-black mb-3"
-                  style={{ color: "rgba(255,107,0,0.08)" }}>
-                  {i + 1}
                 </div>
                 <h3 className="text-lg font-bold text-[#0F172A] mb-2">{step.title}</h3>
                 <p className="text-[#64748B] text-sm leading-relaxed">{step.desc}</p>
@@ -197,13 +351,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Services ── */}
-      <section className="py-16 md:py-24" style={{ background: "var(--bg-page)" }}>
+      {/* ════════════════════════════════════════════════════
+          SERVICES
+          ════════════════════════════════════════════════════ */}
+      <section id="services" className="py-16 md:py-24" style={{ background: "var(--bg-page)" }}>
         <div className="max-w-6xl mx-auto px-4 md:px-6">
           <div className="text-center mb-12 md:mb-16">
             <span className="badge badge-blue mb-4 inline-flex">
               <Truck className="w-3 h-3" />
-              {lang === "ar" ? "خدماتنا" : "Nos services"}
+              {isRTL ? "خدماتنا" : "Nos services"}
             </span>
             <h2 className="text-2xl md:text-4xl font-bold text-[#0F172A] mb-3">{tr("services_title")}</h2>
             <p className="text-[#64748B] text-sm md:text-base max-w-lg mx-auto">{tr("services_sub")}</p>
@@ -224,7 +380,92 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Stats ── */}
+      {/* ════════════════════════════════════════════════════
+          PLATFORM SHOWCASE — Web + Mobile (NAQL1.png)
+          ════════════════════════════════════════════════════ */}
+      <section id="platform" className="py-16 md:py-28 bg-white relative overflow-hidden">
+        {/* Background grid pattern */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{ backgroundImage: "linear-gradient(rgba(15,23,42,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.5) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+
+        <div className="max-w-6xl mx-auto px-4 md:px-6 relative">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+            {/* Image side */}
+            <div className="relative order-2 lg:order-1">
+              <div className="absolute -inset-4 bg-gradient-to-br from-[#FF6B00]/10 via-transparent to-[#2563EB]/10 blur-3xl rounded-[3rem]" />
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-white to-orange-50/30 border border-orange-100/50">
+                <Image
+                  src="/NAQL1.png"
+                  alt="NaqlGo Web & Mobile platform"
+                  width={800}
+                  height={600}
+                  className="w-full h-auto"
+                />
+              </div>
+
+              {/* Floating tag */}
+              <div className="absolute -bottom-4 start-4 md:start-8 bg-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 border border-gray-100">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-start">
+                  <div className="text-xs text-[#64748B]">{isRTL ? "وقت الاستجابة" : "Temps de réponse"}</div>
+                  <div className="text-sm font-bold text-[#0F172A]">{isRTL ? "أقل من 5 دقائق" : "Moins de 5 min"}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Text side */}
+            <div className="order-1 lg:order-2">
+              <span className="badge badge-orange mb-4 inline-flex">
+                <Smartphone className="w-3 h-3" />
+                {isRTL ? "ويب + موبايل" : "Web + Mobile"}
+              </span>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#0F172A] leading-tight mb-5">
+                {isRTL ? (
+                  <>تجربة موحّدة على <span className="gradient-text">كل الأجهزة</span></>
+                ) : (
+                  <>Une expérience unifiée sur <span className="gradient-text">tous vos appareils</span></>
+                )}
+              </h2>
+              <p className="text-base md:text-lg text-[#64748B] leading-relaxed mb-8">
+                {isRTL
+                  ? "إدارة كاملة لطلباتك من المتصفح، وتتبّع مباشر من تطبيق هاتفك. لوحة تحكم احترافية، إحصائيات لحظية، ومزامنة فورية بين كل أجهزتك."
+                  : "Gérez vos commandes depuis le web et suivez vos livraisons depuis votre mobile. Tableau de bord professionnel, statistiques en temps réel et synchronisation instantanée."}
+              </p>
+
+              <div className="space-y-4 mb-8">
+                {[
+                  { icon: TrendingUp, title: isRTL ? "إحصائيات لحظية" : "Statistiques en temps réel", desc: isRTL ? "تابع أرباحك ونشاطك بالأرقام" : "Suivez vos revenus et activités en chiffres" },
+                  { icon: MapPin,     title: isRTL ? "تتبع GPS مباشر" : "Suivi GPS en direct",       desc: isRTL ? "اعرف مكان شحنتك في كل لحظة" : "Localisez votre colis à chaque instant" },
+                  { icon: Shield,     title: isRTL ? "حماية وأمان" : "Sécurité maximale",            desc: isRTL ? "بياناتك ومعاملاتك في أمان تام" : "Vos données et paiements protégés" },
+                ].map((b, i) => (
+                  <div key={i} className="flex items-start gap-4 group">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FFF7ED] to-[#FFEDD5] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <b.icon className="w-5 h-5 text-[#FF6B00]" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#0F172A] mb-0.5">{b.title}</div>
+                      <div className="text-sm text-[#64748B]">{b.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Link href="/register"
+                className="btn-primary text-white font-semibold px-7 py-3.5 rounded-2xl text-base inline-flex items-center gap-2.5">
+                {isRTL ? "ابدأ مجاناً الآن" : "Commencer gratuitement"}
+                <ArrowIcon className="w-5 h-5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
+          STATS
+          ════════════════════════════════════════════════════ */}
       <section className="stats-gradient py-14 md:py-20">
         <div className="max-w-6xl mx-auto px-4 md:px-6 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 text-center text-white relative z-10">
           {stats.map((s, i) => (
@@ -239,20 +480,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Why NaqlGo ── */}
+      {/* ════════════════════════════════════════════════════
+          WHY NAQLGO
+          ════════════════════════════════════════════════════ */}
       <section className="py-16 md:py-24 bg-white">
         <div className="max-w-6xl mx-auto px-4 md:px-6">
           <div className="text-center mb-12 md:mb-16">
             <span className="badge badge-green mb-4 inline-flex">
               <CheckCircle className="w-3 h-3" />
-              {lang === "ar" ? "لماذا نحن؟" : "Pourquoi nous?"}
+              {isRTL ? "لماذا نحن؟" : "Pourquoi nous?"}
             </span>
             <h2 className="text-2xl md:text-4xl font-bold text-[#0F172A]">{tr("why_title")}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
             {features.map((f, i) => (
               <div key={i}
-                className="flex items-start gap-4 p-6 rounded-2xl transition-all hover:shadow-md group"
+                className="flex items-start gap-4 p-6 rounded-2xl transition-all hover:shadow-md hover:-translate-y-0.5 group border border-transparent hover:border-orange-100"
                 style={{ background: "var(--bg-page)" }}>
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FFF7ED] to-[#FFEDD5] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                   <f.icon className="w-5 h-5 text-[#FF6B00]" />
@@ -267,128 +510,274 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Download App ── */}
+      {/* ════════════════════════════════════════════════════
+          TESTIMONIALS
+          ════════════════════════════════════════════════════ */}
       <section className="py-16 md:py-24" style={{ background: "var(--bg-page)" }}>
-        <div className="max-w-5xl mx-auto px-4 md:px-6">
-          <div className="text-center mb-10 md:mb-14">
-            <span className="badge badge-orange mb-4 inline-flex">
-              <Smartphone className="w-3 h-3" />
-              {lang === "ar" ? "حمّل التطبيق" : "Télécharger l'app"}
+        <div className="max-w-6xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-12 md:mb-16">
+            <span className="badge badge-yellow mb-4 inline-flex">
+              <Star className="w-3 h-3 fill-current" />
+              {isRTL ? "آراء عملائنا" : "Témoignages"}
             </span>
             <h2 className="text-2xl md:text-4xl font-bold text-[#0F172A] mb-3">
-              {lang === "ar" ? "حمّل تطبيق NaqlGo على هاتفك" : "Téléchargez NaqlGo sur votre téléphone"}
+              {isRTL ? "ماذا يقول عملاؤنا؟" : "Ce qu'ils disent de nous"}
             </h2>
             <p className="text-[#64748B] text-sm md:text-base max-w-lg mx-auto">
-              {lang === "ar"
-                ? "استمتع بتجربة أسرع وأسهل عبر التطبيق المخصص لهاتفك"
-                : "Profitez d'une expérience plus rapide et plus fluide avec l'app dédiée"}
+              {isRTL ? "آلاف العملاء يثقون بـ NaqlGo يومياً" : "Des milliers de clients nous font confiance chaque jour"}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Android — active */}
-            <a href="/naqlgo.apk" download="NaqlGo.apk"
-              className="group card-premium p-6 md:p-8 flex items-center gap-5 hover:border-[#FF6B00] hover:shadow-xl transition-all">
-              <div className="w-16 h-16 md:w-18 md:h-18 rounded-2xl bg-gradient-to-br from-[#FF6B00] to-[#E05000] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform shrink-0">
-                <Smartphone className="w-8 h-8 text-white" />
-              </div>
-              <div className="flex-1 min-w-0 text-start">
-                <div className="text-[10px] font-bold text-[#FF6B00] uppercase tracking-widest mb-1">
-                  {lang === "ar" ? "متوفر الآن" : "Disponible maintenant"}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
+            {testimonials.map((t, i) => (
+              <div key={i} className="card-premium p-6 md:p-7 relative bg-white">
+                <Quote className="absolute top-5 end-5 w-8 h-8 text-orange-100" />
+                <div className="flex items-center gap-0.5 text-amber-400 mb-4">
+                  {[...Array(t.rating)].map((_, k) => <Star key={k} className="w-4 h-4 fill-current" />)}
                 </div>
-                <div className="text-lg md:text-xl font-bold text-[#0F172A] mb-0.5">
-                  {lang === "ar" ? "تنزيل لـ Android" : "Télécharger pour Android"}
-                </div>
-                <div className="text-xs md:text-sm text-[#64748B]">
-                  {lang === "ar" ? "ملف APK • v2.2.0 • 86 ميجابايت" : "APK • v2.2.0 • 86 Mo"}
-                </div>
-              </div>
-              <Download className="w-6 h-6 text-[#FF6B00] group-hover:scale-125 transition-transform shrink-0" />
-            </a>
-
-            {/* iOS — coming soon */}
-            <div className="card-premium p-6 md:p-8 flex items-center gap-5 opacity-60 cursor-not-allowed">
-              <div className="w-16 h-16 md:w-18 md:h-18 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-lg shrink-0">
-                <Apple className="w-8 h-8 text-white" />
-              </div>
-              <div className="flex-1 min-w-0 text-start">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                  {lang === "ar" ? "قريباً" : "Bientôt"}
-                </div>
-                <div className="text-lg md:text-xl font-bold text-[#0F172A] mb-0.5">
-                  {lang === "ar" ? "تنزيل لـ iPhone" : "Télécharger pour iPhone"}
-                </div>
-                <div className="text-xs md:text-sm text-[#64748B]">
-                  {lang === "ar" ? "App Store — قيد التطوير" : "App Store — en développement"}
+                <p className="text-[#475569] text-sm md:text-base leading-relaxed mb-6">
+                  &ldquo;{t.text}&rdquo;
+                </p>
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FF6B00] to-[#E65100] flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0">
+                    {t.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-bold text-[#0F172A] text-sm">{t.name}</div>
+                    <div className="text-xs text-[#94A3B8]">{t.role}</div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
+        </div>
+      </section>
 
-          {/* Install hint */}
-          <div className="mt-8 max-w-2xl mx-auto bg-amber-50 border border-amber-200 rounded-2xl p-4 md:p-5 flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-              <Shield className="w-4 h-4 text-amber-600" />
+      {/* ════════════════════════════════════════════════════
+          DOWNLOAD APP — using NAQL2.png
+          ════════════════════════════════════════════════════ */}
+      <section id="download" className="py-16 md:py-28 relative overflow-hidden bg-gradient-to-br from-[#0A1628] via-[#0F1D36] to-[#142240] text-white">
+        {/* Decorative blobs */}
+        <div className="absolute top-0 start-0 w-96 h-96 bg-[#FF6B00] opacity-20 blur-3xl rounded-full" />
+        <div className="absolute bottom-0 end-0 w-96 h-96 bg-[#2563EB] opacity-15 blur-3xl rounded-full" />
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+
+        <div className="max-w-6xl mx-auto px-4 md:px-6 relative">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+
+            {/* Text side */}
+            <div className="text-center lg:text-start">
+              <span className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/20 text-orange-300 text-xs font-semibold px-4 py-2 rounded-full mb-5">
+                <Smartphone className="w-3 h-3" />
+                {isRTL ? "حمّل التطبيق" : "Télécharger l'app"}
+              </span>
+
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-5">
+                {isRTL ? (
+                  <>NaqlGo في <span className="gradient-text">جيبك</span><br />أينما كنت</>
+                ) : (
+                  <>NaqlGo dans votre <span className="gradient-text">poche</span><br />où que vous soyez</>
+                )}
+              </h2>
+
+              <p className="text-base md:text-lg text-slate-300 leading-relaxed mb-8 max-w-md mx-auto lg:mx-0">
+                {isRTL
+                  ? "حمّل التطبيق على هاتفك واستمتع بتجربة أسرع وأسهل. اطلب نقل، تابع شحنتك، وتحدث مع الناقل مباشرة."
+                  : "Téléchargez l'application sur votre mobile pour une expérience plus rapide. Commandez, suivez et discutez en direct avec votre transporteur."}
+              </p>
+
+              {/* Download buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-6">
+                <a href="/naqlgo.apk" download="NaqlGo.apk"
+                  className="group flex items-center gap-3 bg-white text-[#0F172A] hover:bg-orange-50 transition-all px-5 py-3.5 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+                  <Smartphone className="w-7 h-7 text-[#FF6B00]" />
+                  <div className="text-start">
+                    <div className="text-[10px] uppercase tracking-widest text-[#64748B] font-bold">
+                      {isRTL ? "متوفر على" : "Disponible sur"}
+                    </div>
+                    <div className="text-base font-bold leading-tight">Google Play / APK</div>
+                  </div>
+                  <Download className="w-5 h-5 text-[#FF6B00] ms-2 group-hover:scale-110 transition-transform" />
+                </a>
+
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 text-white px-5 py-3.5 rounded-2xl opacity-70 cursor-not-allowed">
+                  <Apple className="w-7 h-7" />
+                  <div className="text-start">
+                    <div className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+                      {isRTL ? "قريباً على" : "Bientôt sur"}
+                    </div>
+                    <div className="text-base font-bold leading-tight">App Store</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats row */}
+              <div className="flex items-center justify-center lg:justify-start gap-6 pt-4 border-t border-white/10">
+                <div className="text-start">
+                  <div className="text-2xl font-black text-white">10K+</div>
+                  <div className="text-xs text-slate-400">{isRTL ? "تنزيل" : "Téléchargements"}</div>
+                </div>
+                <div className="w-px h-10 bg-white/15" />
+                <div className="text-start">
+                  <div className="flex items-center gap-1 text-2xl font-black text-white">4.8 <Star className="w-5 h-5 text-amber-400 fill-current" /></div>
+                  <div className="text-xs text-slate-400">{isRTL ? "تقييم" : "Note"}</div>
+                </div>
+                <div className="w-px h-10 bg-white/15 hidden sm:block" />
+                <div className="text-start hidden sm:block">
+                  <div className="text-2xl font-black text-white">86 Mo</div>
+                  <div className="text-xs text-slate-400">{isRTL ? "حجم خفيف" : "Taille légère"}</div>
+                </div>
+              </div>
+
+              {/* Install hint */}
+              <div className="mt-7 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3 text-start">
+                <Shield className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-xs md:text-sm text-amber-100/90 leading-relaxed">
+                  <span className="font-bold">{isRTL ? "تنبيه: " : "Note : "}</span>
+                  {isRTL
+                    ? "بعد التنزيل، فعّل «السماح بمصادر غير معروفة» في إعدادات هاتفك."
+                    : "Après le téléchargement, activez « Sources inconnues » dans les paramètres."}
+                </div>
+              </div>
             </div>
-            <div className="text-xs md:text-sm text-amber-900 leading-relaxed">
-              <span className="font-bold">{lang === "ar" ? "تنبيه: " : "Note : "}</span>
-              {lang === "ar"
-                ? "بعد التنزيل، فعّل خيار «السماح بالتثبيت من مصادر غير معروفة» في إعدادات هاتفك ثم اضغط على الملف لبدء التثبيت."
-                : "Après le téléchargement, activez « Autoriser les sources inconnues » dans les paramètres de votre téléphone, puis appuyez sur le fichier pour l'installer."}
+
+            {/* Image side */}
+            <div className="relative">
+              <div className="absolute -inset-8 bg-gradient-to-br from-[#FF6B00]/30 via-[#2563EB]/20 to-transparent blur-3xl rounded-full" />
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-white">
+                <Image
+                  src="/NAQL2.png"
+                  alt="NaqlGo App Mobile & Web"
+                  width={800}
+                  height={600}
+                  className="w-full h-auto"
+                />
+              </div>
+
+              {/* Floating chip */}
+              <div className="absolute -top-3 -end-3 md:-top-5 md:-end-5 bg-gradient-to-br from-[#FF6B00] to-[#E65100] text-white rounded-2xl shadow-2xl px-4 py-2.5 flex items-center gap-2 animate-float">
+                <Award className="w-4 h-4" />
+                <span className="text-xs md:text-sm font-bold">{isRTL ? "الأفضل في 2025" : "Top App 2025"}</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="animated-gradient py-20 md:py-28 text-center px-4 relative overflow-hidden">
-        {/* Decorative elements */}
+      {/* ════════════════════════════════════════════════════
+          FINAL CTA
+          ════════════════════════════════════════════════════ */}
+      <section className="py-20 md:py-28 text-center px-4 relative overflow-hidden bg-gradient-to-br from-[#FFF7ED] via-white to-[#FFEDD5]">
+        {/* Decorative */}
         <div className="absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
-        <div className="absolute top-10 start-10 w-20 h-20 rounded-full bg-[#FF6B00] opacity-10 blur-3xl" />
-        <div className="absolute bottom-10 end-10 w-32 h-32 rounded-full bg-[#2563EB] opacity-10 blur-3xl" />
+          style={{ backgroundImage: "radial-gradient(circle, #FF6B00 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
 
-        <div className="relative z-10">
+        <div className="relative z-10 max-w-3xl mx-auto">
           <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[#FF6B00] to-[#E65100] flex items-center justify-center shadow-2xl animate-float">
             <Truck className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl md:text-4xl font-bold text-white mb-4">{tr("cta_title")}</h2>
-          <p className="text-slate-400 mb-8 text-sm md:text-lg max-w-md mx-auto">{tr("cta_sub")}</p>
-          <Link href="/register"
-            className="btn-primary text-white font-bold px-10 py-4 rounded-2xl text-base md:text-lg inline-flex items-center gap-2.5">
-            <Sparkles className="w-5 h-5" />
-            {tr("btn_free")}
-            <ArrowIcon className="w-5 h-5" />
-          </Link>
+          <h2 className="text-3xl md:text-5xl font-bold text-[#0F172A] mb-4">{tr("cta_title")}</h2>
+          <p className="text-[#64748B] mb-10 text-base md:text-lg max-w-md mx-auto">{tr("cta_sub")}</p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/register"
+              className="w-full sm:w-auto btn-primary text-white font-bold px-10 py-4 rounded-2xl text-base md:text-lg inline-flex items-center justify-center gap-2.5">
+              <Sparkles className="w-5 h-5" />
+              {tr("btn_free")}
+              <ArrowIcon className="w-5 h-5" />
+            </Link>
+            <Link href="/login"
+              className="w-full sm:w-auto bg-white border-2 border-gray-200 hover:border-[#FF6B00] hover:text-[#FF6B00] text-[#0F172A] font-bold px-10 py-4 rounded-2xl text-base md:text-lg inline-flex items-center justify-center gap-2.5 transition-all">
+              {tr("btn_login")}
+              <ChevronRight className="w-5 h-5" />
+            </Link>
+          </div>
+
+          <p className="text-xs text-[#94A3B8] mt-6">
+            {isRTL ? "✓ بدون بطاقة ائتمان   ✓ تسجيل في 30 ثانية   ✓ إلغاء في أي وقت" : "✓ Sans carte bancaire   ✓ Inscription en 30s   ✓ Annulation à tout moment"}
+          </p>
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="bg-[#0A1628] py-10 md:py-14 text-center px-4">
+      {/* ════════════════════════════════════════════════════
+          FOOTER
+          ════════════════════════════════════════════════════ */}
+      <footer className="bg-[#0A1628] py-12 md:py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-center mb-4">
-            <NaqlGoLogo size="sm" dark />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 pb-10 border-b border-slate-800">
+            {/* Brand col */}
+            <div className="col-span-2 md:col-span-1">
+              <div className="mb-4">
+                <NaqlGoLogo size="sm" dark />
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                {isRTL
+                  ? "منصة النقل والشحن الرائدة في الجزائر."
+                  : "La plateforme leader de transport en Algérie."}
+              </p>
+              <div className="flex items-center gap-1 text-amber-400">
+                {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
+                <span className="text-xs text-slate-400 ms-2">4.8/5</span>
+              </div>
+            </div>
+
+            {/* Platform */}
+            <div>
+              <h4 className="text-white font-bold text-sm mb-4">{isRTL ? "المنصة" : "Plateforme"}</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li><a href="#how" className="text-slate-400 hover:text-[#FF6B00] transition-colors">{isRTL ? "كيف يعمل" : "Comment ça marche"}</a></li>
+                <li><a href="#services" className="text-slate-400 hover:text-[#FF6B00] transition-colors">{isRTL ? "الخدمات" : "Services"}</a></li>
+                <li><a href="#download" className="text-slate-400 hover:text-[#FF6B00] transition-colors">{isRTL ? "التطبيق" : "Application"}</a></li>
+              </ul>
+            </div>
+
+            {/* Account */}
+            <div>
+              <h4 className="text-white font-bold text-sm mb-4">{isRTL ? "الحساب" : "Compte"}</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="/login" className="text-slate-400 hover:text-[#FF6B00] transition-colors">{tr("btn_login")}</Link></li>
+                <li><Link href="/register?role=CLIENT" className="text-slate-400 hover:text-[#FF6B00] transition-colors">{isRTL ? "حساب عميل" : "Compte client"}</Link></li>
+                <li><Link href="/register?role=TRANSPORTER" className="text-slate-400 hover:text-[#FF6B00] transition-colors">{isRTL ? "حساب ناقل" : "Compte transporteur"}</Link></li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="text-white font-bold text-sm mb-4">{isRTL ? "تواصل معنا" : "Contact"}</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li>
+                  <a href="tel:+213000000000" className="flex items-center gap-2 text-slate-400 hover:text-[#FF6B00] transition-colors">
+                    <Phone className="w-4 h-4" />
+                    <span>+213 000 000 000</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:contact@naqlgo.com" className="flex items-center gap-2 text-slate-400 hover:text-[#FF6B00] transition-colors">
+                    <Mail className="w-4 h-4" />
+                    <span>contact@naqlgo.com</span>
+                  </a>
+                </li>
+                <li className="flex items-center gap-2 text-slate-400">
+                  <MapPin className="w-4 h-4" />
+                  <span>{isRTL ? "الجزائر العاصمة" : "Alger, Algérie"}</span>
+                </li>
+              </ul>
+            </div>
           </div>
-          <p className="text-slate-500 text-sm mb-6 max-w-md mx-auto">
-            {lang === "ar"
-              ? "منصة النقل والشحن الرائدة في الجزائر — اربط بضائعك بأفضل الناقلين."
-              : "La plateforme leader de transport en Algérie — connectez vos marchandises aux meilleurs transporteurs."}
-          </p>
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <a href="tel:+213000000000" className="flex items-center gap-2 text-slate-400 hover:text-[#FF6B00] text-sm transition-colors">
-              <Phone className="w-4 h-4" />
-              <span>+213 000 000 000</span>
-            </a>
-            <span className="text-slate-700">|</span>
-            <a href="mailto:contact@naqlgo.com" className="flex items-center gap-2 text-slate-400 hover:text-[#FF6B00] text-sm transition-colors">
-              <Mail className="w-4 h-4" />
-              <span>contact@naqlgo.com</span>
-            </a>
-          </div>
-          <div className="border-t border-slate-800 pt-6">
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-start">
             <p className="text-slate-600 text-xs">
               © 2025 NaqlGo. {tr("copyright")}
             </p>
+            <div className="flex items-center gap-4 text-xs text-slate-500">
+              <span>{isRTL ? "🇩🇿 صُنع في الجزائر" : "🇩🇿 Fait en Algérie"}</span>
+              <span className="text-slate-700">|</span>
+              <span className="flex items-center gap-1.5">
+                <Shield className="w-3 h-3" />
+                {isRTL ? "آمن ومشفّر" : "Sécurisé & chiffré"}
+              </span>
+            </div>
           </div>
         </div>
       </footer>
