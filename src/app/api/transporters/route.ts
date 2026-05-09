@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redis, cacheKey } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
 // Returns online transporters filtered by wilaya, service category, and optional vehicleType.
 // Service: LIVREUR (delivery) | FRODEUR (taxi) | TRANSPORTEUR (goods)
+//
+// Cached for 30 s in Redis — driver online/offline transitions don't need
+// per-second freshness, and this endpoint is hit on every client search.
+// Falls through to DB transparently when Redis isn't configured.
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,37 +24,43 @@ export async function GET(req: NextRequest) {
 
     if (!wilaya) return NextResponse.json({ error: "الولاية مطلوبة" }, { status: 400 });
 
-    const serviceFilter =
-      service === "LIVREUR"      ? { isLivreur: true } :
-      service === "FRODEUR"      ? { isFrodeur: true } :
-      service === "TRANSPORTEUR" ? { isTransporteur: true } :
-      {};
+    const transporters = await redis.cached(
+      cacheKey.transporters(wilaya, service ?? "any", vehicleType ?? undefined),
+      30,
+      async () => {
+        const serviceFilter =
+          service === "LIVREUR"      ? { isLivreur: true } :
+          service === "FRODEUR"      ? { isFrodeur: true } :
+          service === "TRANSPORTEUR" ? { isTransporteur: true } :
+          {};
 
-    const transporters = await prisma.user.findMany({
-      where: {
-        role: "TRANSPORTER",
-        isActive: true,
-        isOnline: true,
-        wilaya,
-        ...serviceFilter,
-        ...(vehicleType ? { vehicleType } : {}),
+        return prisma.user.findMany({
+          where: {
+            role: "TRANSPORTER",
+            isActive: true,
+            isOnline: true,
+            wilaya,
+            ...serviceFilter,
+            ...(vehicleType ? { vehicleType } : {}),
+          },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            wilaya: true,
+            vehicleType: true,
+            vehicleColor: true,
+            isLivreur: true,
+            isFrodeur: true,
+            isTransporteur: true,
+            avgRating: true,
+            totalRatings: true,
+            isOnline: true,
+          },
+          orderBy: [{ avgRating: "desc" }, { totalRatings: "desc" }],
+        });
       },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        wilaya: true,
-        vehicleType: true,
-        vehicleColor: true,
-        isLivreur: true,
-        isFrodeur: true,
-        isTransporteur: true,
-        avgRating: true,
-        totalRatings: true,
-        isOnline: true,
-      },
-      orderBy: [{ avgRating: "desc" }, { totalRatings: "desc" }],
-    });
+    );
 
     return NextResponse.json(transporters);
   } catch (error) {

@@ -14,12 +14,18 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
 
     if (session.user.role === "CLIENT") {
+      // `assignedTransporter` was included before but the frontend never reads it
+      // — dropping it removes a JOIN on every poll tick (3 s for active orders).
       const requests = await prisma.transportRequest.findMany({
         where: { clientId: session.user.id, ...(status ? { status } : {}) },
         include: {
-          bids: { include: { transporter: { select: { name: true, phone: true } } } },
+          bids: {
+            select: {
+              id: true, price: true, estimatedTime: true, note: true, status: true,
+              transporter: { select: { name: true, phone: true } },
+            },
+          },
           rating: { select: { score: true } },
-          assignedTransporter: { select: { name: true, phone: true, avgRating: true, vehicleType: true } },
         },
         orderBy: { createdAt: "desc" },
       });

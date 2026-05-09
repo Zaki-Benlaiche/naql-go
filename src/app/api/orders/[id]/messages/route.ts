@@ -5,26 +5,37 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+// One round-trip auth check: returns 1 row if the caller is authorized, else 0.
+// Replaces a heavy findUnique({ include: { bids: { where: ACCEPTED } } })
+// that pulled the full request row + bids list on every chat poll/refresh.
+async function isParticipant(requestId: string, userId: string): Promise<boolean> {
+  const rows = await prisma.$queryRaw<{ ok: number }[]>`
+    SELECT 1 AS ok
+      FROM transport_requests r
+      LEFT JOIN bids b
+        ON b."requestId" = r.id AND b.status = 'ACCEPTED'
+     WHERE r.id = ${requestId}
+       AND (r."clientId" = ${userId} OR b."transporterId" = ${userId})
+     LIMIT 1
+  `;
+  return rows.length > 0;
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
-    const request = await prisma.transportRequest.findUnique({
-      where: { id },
-      include: { bids: { where: { status: "ACCEPTED" } } },
-    });
-    if (!request) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
-
-    const isClient = request.clientId === session.user.id;
-    const isTransporter = request.bids.some(b => b.transporterId === session.user.id);
-    if (!isClient && !isTransporter) return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    if (!(await isParticipant(id, session.user.id))) {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    }
 
     const messages = await prisma.message.findMany({
       where: { requestId: id },
       orderBy: { createdAt: "asc" },
       take: 100,
+      select: { id: true, senderName: true, senderRole: true, text: true, createdAt: true },
     });
 
     return NextResponse.json(messages);
@@ -44,15 +55,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!text?.trim()) return NextResponse.json({ error: "الرسالة فارغة" }, { status: 400 });
     if (text.length > 1000) return NextResponse.json({ error: "الرسالة طويلة جداً" }, { status: 400 });
 
-    const request = await prisma.transportRequest.findUnique({
-      where: { id },
-      include: { bids: { where: { status: "ACCEPTED" } } },
-    });
-    if (!request) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
-
-    const isClient = request.clientId === session.user.id;
-    const isTransporter = request.bids.some(b => b.transporterId === session.user.id);
-    if (!isClient && !isTransporter) return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    if (!(await isParticipant(id, session.user.id))) {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    }
 
     const message = await prisma.message.create({
       data: {
@@ -62,6 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         senderRole: session.user.role,
         text: text.trim(),
       },
+      select: { id: true, senderName: true, senderRole: true, text: true, createdAt: true },
     });
 
     return NextResponse.json(message, { status: 201 });
