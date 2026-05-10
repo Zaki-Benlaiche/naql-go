@@ -21,6 +21,10 @@ const env = {
 const movements = [
   { from: join(ROOT, "src/app/api"),         to: join(ROOT, "src/_app_api_off") },
   { from: join(ROOT, "src/middleware.ts"),   to: join(ROOT, "src/_middleware_off.ts") },
+  // Don't bundle the previous APK download into the new APK — Next.js copies
+  // every file in public/ into the static output, which would otherwise embed
+  // a stale ~80 MB self-copy inside every new build.
+  { from: join(ROOT, "public/naqlgo.apk"),   to: join(ROOT, "_naqlgo_apk_off") },
 ];
 
 function move(pair) {
