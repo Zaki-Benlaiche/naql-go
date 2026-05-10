@@ -35,8 +35,28 @@ model User {
   ratingsReceived Rating[]           @relation("RatingTransporter")
   couponUses      CouponUse[]
   documents       Document[]
+  deviceTokens    DeviceToken[]
 
   @@map("users")
+}
+
+model DeviceToken {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // FCM registration token. Long (~150 chars), opaque.
+  token      String
+  // android | ios | web — used when FCM v1 needs platform-specific options.
+  platform   String   @default("android")
+  // Last time the client confirmed this token is still valid. We prune tokens
+  // that haven't been seen for 60+ days to keep the table small and avoid
+  // sending to stale devices.
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, token])
+  @@index([userId])
+  @@map("device_tokens")
 }
 
 model Vehicle {

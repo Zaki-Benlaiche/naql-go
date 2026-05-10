@@ -2,6 +2,14 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { rateLimit } from "./rateLimit";
+import { normalizePhone } from "./phone";
+
+// Credential-stuffing protection: cap attempts per identifier per window.
+// Keyed on the identifier (not IP) so an attacker rotating IPs still gets
+// throttled when hammering the same account.
+const LOGIN_LIMIT = 10;
+const LOGIN_WINDOW_SEC = 15 * 60;
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -46,15 +54,26 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) return null;
+        if (credentials.password.length > 72) return null;
 
-        const identifier = credentials.identifier.trim();
+        const raw = credentials.identifier.trim();
+        // If the input looks like a phone, normalize it so "06 12..." and
+        // "+213612..." resolve to the same DB row.
+        const asPhone = normalizePhone(raw);
+        const looksLikePhone = /^[\d+\s().-]+$/.test(raw);
+        const phoneCandidate = looksLikePhone ? asPhone : raw;
+        const emailCandidate = raw.toLowerCase();
 
-        // Search by phone or email
+        // Throttle on the normalized identifier so we don't burn CPU on bcrypt
+        // for accounts under active attack.
+        const rl = await rateLimit("login", phoneCandidate || emailCandidate, LOGIN_LIMIT, LOGIN_WINDOW_SEC);
+        if (!rl.allowed) return null;
+
         const user = await prisma.user.findFirst({
           where: {
             OR: [
-              { phone: identifier },
-              { email: identifier },
+              { phone: phoneCandidate },
+              { email: emailCandidate },
             ],
           },
         });

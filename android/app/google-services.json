@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "55940158547",
+    "project_id": "naqlgo",
+    "storage_bucket": "naqlgo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:55940158547:android:ad3ae9c6f6d6c917a4a2a6",
+        "android_client_info": {
+          "package_name": "com.naqlgo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXOjUnW156P8mN-12F_It5u1tuS9lnpWs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

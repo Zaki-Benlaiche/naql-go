@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { pushToUserAsync } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           data: { userId: request.clientId, ...notifData, requestId: request.id },
         });
       } catch (e) { console.error("[status notif]", e); }
+      pushToUserAsync(request.clientId, {
+        title: notifData.title,
+        body: notifData.body,
+        data: { type: notifData.type, requestId: request.id, status },
+      });
     }
 
     return NextResponse.json({ success: true });

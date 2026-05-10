@@ -202,6 +202,20 @@ Prix accepté = 100%
 | **React Compiler** | Activé (Next 16) → mémoization automatique des composants |  |
 | **Prisma `select`** | Tous les `findMany` admin n'incluent que les colonnes affichées (pas de `*`) | Payload réduit, moins de bande passante |
 
+### Phase 2 — Scaling à l'inscription massive (v2.3.0)
+
+Améliorations ciblant les pics d'inscription (campagnes marketing, lancement public) :
+
+| Couche | Mesure | Impact |
+|--------|--------|--------|
+| **Inscription unifiée** | Les vérifications téléphone + email fusionnées en un seul `findFirst` avec `OR` et `select: { phone, email }` | 3 round-trips DB → 2 (–33% latence par inscription) |
+| **Normalisation téléphone** | `normalizePhone()` : `+213 6...`, `00213 6...`, `06-12 ...` → forme canonique `0612345678` avant insertion ET lookup login | Élimine les doublons d'utilisateurs ; le login retrouve le compte quelle que soit la saisie |
+| **Validation stricte** | Regex `^0[567]\d{8}$` avant tout appel DB ; password ≤ 72 chars (cap bcrypt) | Rejet immédiat des entrées invalides, pas de CPU gaspillé |
+| **Rate limit `/api/register`** | Redis `incr` avec TTL : 5 inscriptions / IP / heure, code 429 + header `Retry-After` | Bloque les bots avant l'appel DB ; protège bcrypt (CPU) lors de pics |
+| **Rate limit login (NextAuth)** | 10 tentatives / identifiant / 15 min directement dans `authorize()` | Stoppe le credential stuffing — un attaquant qui hammer un compte est bloqué après 10 essais, indépendamment de l'IP |
+| **Fail-open Redis** | Si `UPSTASH_REDIS_REST_*` non configuré, le limiter laisse passer (dev local) | Pas de friction en développement, protection activée automatiquement en prod |
+| **`Prisma.create` avec `select`** | L'inscription ne ramène plus la ligne complète, seulement `{ id, name, role }` | Payload de réponse minimal, moins de sérialisation |
+
 ### Capacité estimée
 - **PostgreSQL Neon (free tier)** : 191 connexions concurrentes, 0.5 GB stockage → suffisant pour ~50 000 users + ~500 000 commandes
 - **Vercel Hobby** : 100 GB bande passante/mois, 100k invocations/jour → ~15 000 utilisateurs actifs/jour confortablement

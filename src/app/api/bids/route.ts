@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { pushToUserAsync } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 
@@ -52,13 +53,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Notify the client (non-fatal, fire-and-forget shape)
+    // In-app notification + FCM push to the client.
+    const notifTitle = "💰 عرض جديد على طلبك";
+    const notifBody = `${request.fromCity} ← ${request.toCity} — ${priceNum.toLocaleString()} دج من ${transporter?.name ?? "ناقل"}`;
     try {
       await prisma.notification.create({
         data: {
           userId: request.clientId,
-          title: "💰 عرض جديد على طلبك",
-          body: `${request.fromCity} ← ${request.toCity} — ${priceNum.toLocaleString()} دج من ${transporter?.name ?? "ناقل"}`,
+          title: notifTitle,
+          body: notifBody,
           type: "new_bid",
           requestId,
         },
@@ -66,6 +69,11 @@ export async function POST(req: NextRequest) {
     } catch (notifErr) {
       console.error("[bids notification]", notifErr);
     }
+    pushToUserAsync(request.clientId, {
+      title: notifTitle,
+      body: notifBody,
+      data: { type: "new_bid", requestId, bidId: bid.id },
+    });
 
     return NextResponse.json(bid, { status: 201 });
   } catch (error) {

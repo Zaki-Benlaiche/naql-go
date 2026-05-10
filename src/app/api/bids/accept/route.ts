@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { pushToUserAsync } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 
@@ -47,18 +48,25 @@ export async function POST(req: NextRequest) {
        WHERE "requestId"=${requestId} AND id<>${bidId}
     `;
 
-    // Notification (single insert — safe). Best-effort.
+    // In-app notification + FCM push to the transporter (winner).
+    const notifTitle = "🎉 تم قبول عرضك!";
+    const notifBody = `${request.fromCity} ← ${request.toCity} — ${bid.price.toLocaleString()} دج`;
     try {
       await prisma.notification.create({
         data: {
           userId: bid.transporterId,
-          title: "🎉 تم قبول عرضك!",
-          body: `${request.fromCity} ← ${request.toCity} — ${bid.price.toLocaleString()} دج`,
+          title: notifTitle,
+          body: notifBody,
           type: "bid_accepted",
           requestId,
         },
       });
     } catch (e) { console.error("[bids/accept notification]", e); }
+    pushToUserAsync(bid.transporterId, {
+      title: notifTitle,
+      body: notifBody,
+      data: { type: "bid_accepted", requestId, bidId },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

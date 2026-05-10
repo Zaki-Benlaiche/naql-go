@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { pushToUserAsync } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 
@@ -130,20 +131,30 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Notify assigned transporter for INTRA requests
+    // INTRA: direct push to the chosen transporter — they pick up the phone NOW.
     if (assignedTransporterId) {
+      const client = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true },
+      });
+      const notifTitle = "📦 طلب نقل مباشر جديد";
+      const notifBody = `${fromCity} — طلب من ${client?.name ?? "عميل"}`;
       try {
-        const client = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } });
         await prisma.notification.create({
           data: {
             userId: assignedTransporterId,
-            title: "📦 طلب نقل مباشر جديد",
-            body: `${fromCity} — طلب من ${client?.name ?? "عميل"}`,
+            title: notifTitle,
+            body: notifBody,
             type: "direct_request",
             requestId: request.id,
           },
         });
       } catch (e) { console.error("[notification direct]", e); }
+      pushToUserAsync(assignedTransporterId, {
+        title: notifTitle,
+        body: notifBody,
+        data: { type: "direct_request", requestId: request.id },
+      });
     }
 
     return NextResponse.json(request, { status: 201 });
