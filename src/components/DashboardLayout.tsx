@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LogOut, LayoutDashboard, PlusCircle, List, Globe,
   Menu, X, Bell, Package, Wifi, WifiOff, TrendingUp, FileText,
-  ChevronRight, UserCog, Sparkles, DollarSign, Users,
+  ChevronRight, UserCog, Sparkles, DollarSign, Users, Hourglass, ShieldAlert,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
@@ -38,18 +38,34 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isOnline, setIsOnline] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
   const [notifToast, setNotifToast] = useState<string | null>(null);
+  const [kyc, setKyc] = useState<{ isApproved: boolean; kycReviewedAt: string | null; rejectionReason: string | null } | null>(null);
   const prevCountRef = useRef(-1);
 
   useEffect(() => {
     if (!isClient && !isAdmin) {
       fetch("/api/profile/status")
         .then(r => r.json())
-        .then(d => { if (typeof d.isOnline === "boolean") setIsOnline(d.isOnline); })
+        .then(d => {
+          if (typeof d.isOnline === "boolean") setIsOnline(d.isOnline);
+          if (typeof d.isApproved === "boolean") {
+            setKyc({
+              isApproved: d.isApproved,
+              kycReviewedAt: d.kycReviewedAt ?? null,
+              rejectionReason: d.rejectionReason ?? null,
+            });
+          }
+        })
         .catch(() => {});
     }
-  }, [isClient]);
+  }, [isClient, isAdmin]);
 
   async function toggleOnline() {
+    if (kyc && !kyc.isApproved) {
+      // Don't even try — the server would 403, just surface the reason inline.
+      setNotifToast(lang === "ar" ? "حسابك قيد المراجعة من قبل الإدارة" : "Votre compte est en cours de validation");
+      setTimeout(() => setNotifToast(null), 4000);
+      return;
+    }
     setTogglingStatus(true);
     const next = !isOnline;
     try {
@@ -210,16 +226,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="px-3 pb-5 pt-3 space-y-1 shrink-0 border-t border-white/8">
 
             {/* Online toggle — transporter */}
-            {!isClient && (
-              <button onClick={toggleOnline} disabled={togglingStatus}
+            {!isClient && !isAdmin && (
+              <button onClick={toggleOnline} disabled={togglingStatus || (kyc && !kyc.isApproved) || false}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-all ${
-                  isOnline
-                    ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/20"
-                    : "text-slate-400 hover:text-white hover:bg-white/8"
+                  kyc && !kyc.isApproved
+                    ? "bg-amber-500/10 text-amber-300 border border-amber-500/20 cursor-not-allowed"
+                    : isOnline
+                      ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/20"
+                      : "text-slate-400 hover:text-white hover:bg-white/8"
                 }`}>
-                {isOnline ? <Wifi className="w-4 h-4 shrink-0" /> : <WifiOff className="w-4 h-4 shrink-0" />}
-                {isOnline ? tr("go_offline") : tr("go_online")}
-                {isOnline && (
+                {kyc && !kyc.isApproved
+                  ? <Hourglass className="w-4 h-4 shrink-0" />
+                  : isOnline
+                    ? <Wifi className="w-4 h-4 shrink-0" />
+                    : <WifiOff className="w-4 h-4 shrink-0" />}
+                {kyc && !kyc.isApproved
+                  ? (lang === "ar" ? "قيد المراجعة" : "En validation")
+                  : isOnline ? tr("go_offline") : tr("go_online")}
+                {isOnline && kyc?.isApproved && (
                   <span className="ms-auto flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span className="text-xs text-emerald-400">{lang === "ar" ? "متصل" : "En ligne"}</span>
@@ -285,6 +309,50 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </header>
+
+        {/* KYC banner — visible to unapproved transporters until admin acts. */}
+        {!isClient && !isAdmin && kyc && !kyc.isApproved && (
+          <div className={`mx-4 mt-4 md:mx-8 md:mt-6 rounded-2xl p-4 border ${
+            kyc.rejectionReason
+              ? "bg-red-50 border-red-200 text-red-800"
+              : "bg-amber-50 border-amber-200 text-amber-900"
+          }`}>
+            <div className="flex items-start gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                kyc.rejectionReason ? "bg-red-100" : "bg-amber-100"
+              }`}>
+                {kyc.rejectionReason
+                  ? <ShieldAlert className="w-5 h-5 text-red-600" />
+                  : <Hourglass className="w-5 h-5 text-amber-600" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm">
+                  {kyc.rejectionReason
+                    ? (lang === "ar" ? "تم رفض حسابك" : "Compte refusé")
+                    : (lang === "ar" ? "حسابك قيد المراجعة" : "Compte en validation")}
+                </p>
+                <p className="text-xs mt-1 opacity-90">
+                  {kyc.rejectionReason
+                    ? (lang === "ar" ? `السبب: ${kyc.rejectionReason}` : `Motif : ${kyc.rejectionReason}`)
+                    : (lang === "ar"
+                        ? "ارفع وثائقك (رخصة السياقة، البطاقة الرمادية، التأمين). ستتمكن من العمل بمجرد الموافقة."
+                        : "Téléchargez vos pièces (permis, carte grise, assurance). Vous pourrez travailler dès validation.")}
+                </p>
+                <Link
+                  href="/transporter/documents"
+                  className={`inline-flex items-center gap-1.5 mt-2 text-xs font-bold px-3 py-1.5 rounded-lg ${
+                    kyc.rejectionReason
+                      ? "bg-red-100 text-red-700 hover:bg-red-200"
+                      : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                  } transition-colors`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  {lang === "ar" ? "إدارة الوثائق" : "Gérer mes pièces"}
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="flex-1 p-4 md:p-8">
           {children}

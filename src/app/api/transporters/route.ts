@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
           where: {
             role: "TRANSPORTER",
             isActive: true,
+            isApproved: true,
             isOnline: true,
             wilaya,
             ...serviceFilter,

@@ -32,10 +32,17 @@ export async function POST(req: NextRequest) {
       }),
       prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { name: true },
+        select: { name: true, isApproved: true },
       }),
     ]);
 
+    // KYC gate — unapproved transporters cannot bid.
+    if (!transporter?.isApproved) {
+      return NextResponse.json(
+        { error: "حسابك قيد المراجعة من قبل الإدارة" },
+        { status: 403 },
+      );
+    }
     if (!request || request.status !== "OPEN") {
       return NextResponse.json({ error: "الطلب غير متاح" }, { status: 400 });
     }

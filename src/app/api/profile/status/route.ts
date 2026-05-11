@@ -17,6 +17,20 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "قيمة غير صالحة" }, { status: 400 });
     }
 
+    // KYC gate — unapproved transporters can't go online.
+    if (isOnline) {
+      const me = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { isApproved: true },
+      });
+      if (!me?.isApproved) {
+        return NextResponse.json(
+          { error: "حسابك قيد المراجعة من قبل الإدارة" },
+          { status: 403 },
+        );
+      }
+    }
+
     await prisma.user.update({
       where: { id: session.user.id },
       data: { isOnline },
@@ -36,7 +50,10 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { isOnline: true, avgRating: true, totalRatings: true },
+      select: {
+        isOnline: true, avgRating: true, totalRatings: true,
+        isApproved: true, kycReviewedAt: true, rejectionReason: true,
+      },
     });
 
     return NextResponse.json(user);

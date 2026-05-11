@@ -15,6 +15,15 @@ model User {
   role      String   // CLIENT | TRANSPORTER | ADMIN
   isOnline     Boolean  @default(false)
   isActive     Boolean  @default(true)
+  // KYC gate. New transporters start `false` and stay locked out of receiving
+  // orders / bidding until an admin reviews their documents. Clients and
+  // admins are auto-approved at registration so this never blocks them.
+  isApproved      Boolean  @default(false)
+  // Set when an admin acts on the KYC submission (approve OR reject). Null
+  // means "still in the admin's queue".
+  kycReviewedAt   DateTime?
+  // When rejected, the reason shown to the transporter so they can correct.
+  rejectionReason String?
   avgRating    Float?
   totalRatings Int      @default(0)
   wilaya       String?

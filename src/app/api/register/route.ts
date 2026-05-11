@@ -66,8 +66,11 @@ export async function POST(req: NextRequest) {
     }
 
     const hashed = await bcrypt.hash(password, 10);
+    // Clients are auto-approved. Transporters land in the KYC queue —
+    // admin must review their documents before they can receive orders.
+    const isApproved = role === "CLIENT";
     const user = await prisma.user.create({
-      data: { name, phone, email, password: hashed, role },
+      data: { name, phone, email, password: hashed, role, isApproved },
       select: { id: true, name: true, role: true },
     });
 

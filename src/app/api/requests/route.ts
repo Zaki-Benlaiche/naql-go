@@ -105,6 +105,22 @@ export async function POST(req: NextRequest) {
 
     const cat = (serviceCategory as string | undefined)?.toUpperCase() || "TRANSPORTEUR";
 
+    // KYC gate on INTRA direct requests — refuse to assign to an unapproved
+    // driver. INTER (open bidding) is naturally filtered later because only
+    // approved drivers can bid (see /api/bids POST).
+    if (assignedTransporterId) {
+      const target = await prisma.user.findUnique({
+        where: { id: assignedTransporterId },
+        select: { isApproved: true, isActive: true },
+      });
+      if (!target || !target.isActive || !target.isApproved) {
+        return NextResponse.json(
+          { error: "الناقل غير متاح حالياً" },
+          { status: 400 },
+        );
+      }
+    }
+
     const request = await prisma.transportRequest.create({
       data: {
         clientId: session.user.id,

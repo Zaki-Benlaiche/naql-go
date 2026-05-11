@@ -5,13 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Package, DollarSign, LogOut,
-  Menu, X, Globe, ShieldCheck, ChevronRight,
+  Menu, X, Globe, ShieldCheck, ChevronRight, BadgeCheck,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
 
 const iconColors: Record<string, string> = {
   "/admin":          "#FF6B00",
+  "/admin/kyc":      "#F59E0B",
   "/admin/users":    "#2563EB",
   "/admin/orders":   "#8B5CF6",
   "/admin/earnings": "#10B981",
@@ -27,6 +28,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   const links = [
     { href: "/admin",          label: ar ? "الإحصائيات"  : "Statistiques", icon: LayoutDashboard },
+    { href: "/admin/kyc",      label: ar ? "موافقة السائقين" : "Validation chauffeurs", icon: BadgeCheck },
     { href: "/admin/users",    label: ar ? "المستخدمون"  : "Utilisateurs", icon: Users },
     { href: "/admin/orders",   label: ar ? "الطلبات"     : "Commandes",    icon: Package },
     { href: "/admin/earnings", label: ar ? "العمولات"    : "Commissions",  icon: DollarSign },
