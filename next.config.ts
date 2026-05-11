@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const isCapacitor = process.env.BUILD_TARGET === "capacitor";
 
@@ -34,4 +35,20 @@ const nextConfig: NextConfig = {
       }),
 };
 
-export default nextConfig;
+// Wrap with Sentry only for the Vercel build. We skip the wrapper for the
+// Capacitor static export — the source-map upload step needs an auth token
+// that the local APK build doesn't need to set.
+export default isCapacitor
+  ? nextConfig
+  : withSentryConfig(nextConfig, {
+      // Silent unless SENTRY_AUTH_TOKEN is configured. The DSN alone is
+      // enough to capture errors; source-map upload is a nice-to-have.
+      silent: !process.env.SENTRY_AUTH_TOKEN,
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Hide source maps from the public bundle.
+      sourcemaps: { disable: false },
+      // Keep build output clean — disable Vercel cron telemetry probe.
+      disableLogger: true,
+    });

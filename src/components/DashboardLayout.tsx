@@ -263,6 +263,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <LogOut className="w-4 h-4 shrink-0" />
               {tr("logout")}
             </button>
+
+            <div className="pt-3 mt-2 border-t border-white/8 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-white/30 px-3">
+              <Link href="/legal/privacy" className="hover:text-white/60 transition-colors">
+                {lang === "ar" ? "الخصوصية" : "Confidentialité"}
+              </Link>
+              <span>·</span>
+              <Link href="/legal/terms" className="hover:text-white/60 transition-colors">
+                {lang === "ar" ? "الشروط" : "Conditions"}
+              </Link>
+              <span>·</span>
+              <Link href="/legal/delete-account" className="hover:text-white/60 transition-colors">
+                {lang === "ar" ? "حذف الحساب" : "Supprimer mon compte"}
+              </Link>
+            </div>
           </div>
         </div>
       </aside>

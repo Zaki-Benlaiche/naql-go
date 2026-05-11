@@ -191,6 +191,19 @@ function RegisterForm() {
             {tr("login_link")}
           </Link>
         </p>
+
+        <p className="text-center text-xs mt-4 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+          {lang === "ar"
+            ? "بإنشاء الحساب أنت توافق على"
+            : "En créant un compte vous acceptez nos"}{" "}
+          <Link href="/legal/terms" className="underline hover:text-[#FF6B00]">
+            {lang === "ar" ? "شروط الاستخدام" : "Conditions"}
+          </Link>{" "}
+          {lang === "ar" ? "و" : "et notre"}{" "}
+          <Link href="/legal/privacy" className="underline hover:text-[#FF6B00]">
+            {lang === "ar" ? "سياسة الخصوصية" : "Politique de confidentialité"}
+          </Link>
+        </p>
       </div>
     </div>
   );
