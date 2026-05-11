@@ -39,6 +39,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [togglingStatus, setTogglingStatus] = useState(false);
   const [notifToast, setNotifToast] = useState<string | null>(null);
   const [kyc, setKyc] = useState<{ isApproved: boolean; kycReviewedAt: string | null; rejectionReason: string | null } | null>(null);
+  const [commissionOverdue, setCommissionOverdue] = useState(false);
   const prevCountRef = useRef(-1);
 
   useEffect(() => {
@@ -54,6 +55,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               rejectionReason: d.rejectionReason ?? null,
             });
           }
+          if (typeof d.commissionOverdue === "boolean") {
+            setCommissionOverdue(d.commissionOverdue);
+          }
         })
         .catch(() => {});
     }
@@ -63,6 +67,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     if (kyc && !kyc.isApproved) {
       // Don't even try — the server would 403, just surface the reason inline.
       setNotifToast(lang === "ar" ? "حسابك قيد المراجعة من قبل الإدارة" : "Votre compte est en cours de validation");
+      setTimeout(() => setNotifToast(null), 4000);
+      return;
+    }
+    if (commissionOverdue) {
+      setNotifToast(lang === "ar" ? "لديك عمولات متأخرة. سدّدها لتعود للعمل." : "Commissions en retard — réglez-les pour reprendre.");
       setTimeout(() => setNotifToast(null), 4000);
       return;
     }
@@ -227,23 +236,25 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
             {/* Online toggle — transporter */}
             {!isClient && !isAdmin && (
-              <button onClick={toggleOnline} disabled={togglingStatus || (kyc && !kyc.isApproved) || false}
+              <button onClick={toggleOnline} disabled={togglingStatus || (kyc && !kyc.isApproved) || commissionOverdue || false}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-all ${
-                  kyc && !kyc.isApproved
+                  (kyc && !kyc.isApproved) || commissionOverdue
                     ? "bg-amber-500/10 text-amber-300 border border-amber-500/20 cursor-not-allowed"
                     : isOnline
                       ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/20"
                       : "text-slate-400 hover:text-white hover:bg-white/8"
                 }`}>
-                {kyc && !kyc.isApproved
+                {(kyc && !kyc.isApproved) || commissionOverdue
                   ? <Hourglass className="w-4 h-4 shrink-0" />
                   : isOnline
                     ? <Wifi className="w-4 h-4 shrink-0" />
                     : <WifiOff className="w-4 h-4 shrink-0" />}
                 {kyc && !kyc.isApproved
                   ? (lang === "ar" ? "قيد المراجعة" : "En validation")
-                  : isOnline ? tr("go_offline") : tr("go_online")}
-                {isOnline && kyc?.isApproved && (
+                  : commissionOverdue
+                    ? (lang === "ar" ? "عمولة متأخرة" : "Commission en retard")
+                    : isOnline ? tr("go_offline") : tr("go_online")}
+                {isOnline && kyc?.isApproved && !commissionOverdue && (
                   <span className="ms-auto flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span className="text-xs text-emerald-400">{lang === "ar" ? "متصل" : "En ligne"}</span>
@@ -323,6 +334,35 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </header>
+
+        {/* Commission overdue banner — takes priority over KYC since this
+            blocks an already-approved driver from operating. */}
+        {!isClient && !isAdmin && kyc?.isApproved && commissionOverdue && (
+          <div className="mx-4 mt-4 md:mx-8 md:mt-6 rounded-2xl p-4 border bg-red-50 border-red-200 text-red-800">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-red-100">
+                <ShieldAlert className="w-5 h-5 text-red-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm">
+                  {lang === "ar" ? "عمولة متأخرة" : "Commission en retard"}
+                </p>
+                <p className="text-xs mt-1 opacity-90">
+                  {lang === "ar"
+                    ? "لديك عمولات شهرية لم تُسدَّد بعد. سدّدها عبر BaridiMob / CCP لتعود للعمل."
+                    : "Vous avez des commissions impayées. Réglez-les via BaridiMob / CCP pour reprendre."}
+                </p>
+                <Link
+                  href="/transporter/earnings"
+                  className="inline-flex items-center gap-1.5 mt-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                >
+                  <DollarSign className="w-3.5 h-3.5" />
+                  {lang === "ar" ? "تسوية الآن" : "Régler maintenant"}
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* KYC banner — visible to unapproved transporters until admin acts. */}
         {!isClient && !isAdmin && kyc && !kyc.isApproved && (

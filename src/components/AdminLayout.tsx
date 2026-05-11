@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Package, DollarSign, LogOut,
-  Menu, X, Globe, ShieldCheck, ChevronRight, BadgeCheck,
+  Menu, X, Globe, ShieldCheck, ChevronRight, BadgeCheck, Banknote,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
@@ -16,6 +16,7 @@ const iconColors: Record<string, string> = {
   "/admin/users":    "#2563EB",
   "/admin/orders":   "#8B5CF6",
   "/admin/earnings": "#10B981",
+  "/admin/payments": "#06B6D4",
 };
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: "/admin/users",    label: ar ? "المستخدمون"  : "Utilisateurs", icon: Users },
     { href: "/admin/orders",   label: ar ? "الطلبات"     : "Commandes",    icon: Package },
     { href: "/admin/earnings", label: ar ? "العمولات"    : "Commissions",  icon: DollarSign },
+    { href: "/admin/payments", label: ar ? "تحقق الدفعات" : "Vérif. paiements", icon: Banknote },
   ];
 
   const initial = session?.user?.name?.[0]?.toUpperCase() ?? "A";

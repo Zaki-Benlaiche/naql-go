@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isOverdue } from "@/lib/commission";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,20 @@ export async function PATCH(req: NextRequest) {
           { status: 403 },
         );
       }
+
+      // Commission overdue: any unpaid settlement whose period ended more
+      // than GRACE_DAYS ago blocks the driver until they settle.
+      const unpaid = await prisma.commissionPayment.findMany({
+        where: { transporterId: session.user.id, status: { not: "PAID" } },
+        select: { periodYear: true, periodMonth: true },
+      });
+      const overdue = unpaid.some(p => isOverdue(p.periodYear, p.periodMonth));
+      if (overdue) {
+        return NextResponse.json(
+          { error: "لديك عمولات متأخرة. سدّدها لتعود للعمل." },
+          { status: 403 },
+        );
+      }
     }
 
     await prisma.user.update({
@@ -53,10 +68,22 @@ export async function GET() {
       select: {
         isOnline: true, avgRating: true, totalRatings: true,
         isApproved: true, kycReviewedAt: true, rejectionReason: true,
+        role: true,
       },
     });
 
-    return NextResponse.json(user);
+    // Compute commission-overdue flag inline so the client UI can show the
+    // same banner pattern as KYC and grey the online toggle.
+    let commissionOverdue = false;
+    if (user?.role === "TRANSPORTER") {
+      const unpaid = await prisma.commissionPayment.findMany({
+        where: { transporterId: session.user.id, status: { not: "PAID" } },
+        select: { periodYear: true, periodMonth: true },
+      });
+      commissionOverdue = unpaid.some(p => isOverdue(p.periodYear, p.periodMonth));
+    }
+
+    return NextResponse.json({ ...user, commissionOverdue });
   } catch (error) {
     console.error("[profile/status GET]", error);
     return NextResponse.json({ error: "خطأ في الخادم" }, { status: 500 });

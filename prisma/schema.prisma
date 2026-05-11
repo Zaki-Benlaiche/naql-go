@@ -45,8 +45,56 @@ model User {
   couponUses      CouponUse[]
   documents       Document[]
   deviceTokens    DeviceToken[]
+  commissionPayments CommissionPayment[]
 
   @@map("users")
+}
+
+// Monthly platform-commission settlement from each transporter.
+//
+// State machine:
+//   PENDING_PROOF  → no payment yet, driver needs to transfer + submit proof.
+//   UNDER_REVIEW   → driver uploaded proof + reference; admin verifies CCP.
+//   PAID           → admin confirmed the transfer landed.
+//   REJECTED       → admin rejected the proof; driver must resubmit.
+//
+// A row exists for every (transporter, month) where the commission >= MIN
+// payment threshold. Rows are created lazily when the transporter opens
+// their earnings page or when the online guard checks for overdue debts.
+model CommissionPayment {
+  id              String   @id @default(cuid())
+  transporterId   String
+  transporter     User     @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+
+  // Billing period — month/year (1..12 / 4-digit). One row per period.
+  periodMonth     Int
+  periodYear      Int
+
+  // Snapshot of what the driver owed when the row was created. We freeze it
+  // so a late-arriving delivery (rare, but possible) doesn't shift the
+  // amount under the driver's feet between submission and review.
+  amount          Float
+
+  status          String   @default("PENDING_PROOF")
+
+  // Set when the driver submits proof.
+  proofUrl        String?
+  transactionRef String?
+  submittedAt    DateTime?
+
+  // Set when the admin acts.
+  reviewedAt     DateTime?
+  reviewedById   String?
+  rejectionReason String?
+  paidAt         DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([transporterId, periodYear, periodMonth])
+  @@index([status, periodYear, periodMonth])
+  @@index([transporterId, status])
+  @@map("commission_payments")
 }
 
 model DeviceToken {

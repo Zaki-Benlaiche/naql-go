@@ -6,6 +6,7 @@ import {
   AlertCircle, CheckCircle2, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { CommissionPayments } from "@/components/CommissionPayments";
 
 type EarningsData = {
   totalGross: number;
@@ -154,6 +155,9 @@ export default function EarningsPage() {
                 </div>
               </div>
             </div>
+
+            {/* ── Commission settlement (CCP / BaridiMob) ── */}
+            <CommissionPayments />
 
             {/* ── History ── */}
             <div>
