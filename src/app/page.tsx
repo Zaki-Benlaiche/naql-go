@@ -1,12 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
   Package, Clock, Star, ArrowLeft, ArrowRight, CheckCircle, Menu, X, Globe,
   Truck, Sofa, HardHat, Thermometer, Container, Shield, MapPin, Zap,
   Phone, Mail, Sparkles, Download, Smartphone, Apple,
-  TrendingUp, ChevronRight,
+  TrendingUp, ChevronRight, ChevronDown,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
@@ -14,8 +14,31 @@ import { NaqlGoLogo } from "@/components/NaqlGoLogo";
 export default function Home() {
   const { lang, setLang, tr } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const ArrowIcon = lang === "ar" ? ArrowLeft : ArrowRight;
   const isRTL = lang === "ar";
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!registerOpen) return;
+    const close = () => setRegisterOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [registerOpen]);
+
+  const navLinks = [
+    { href: "#how",       label: isRTL ? "كيف يعمل"  : "Comment ça marche" },
+    { href: "#services",  label: isRTL ? "الخدمات"   : "Services" },
+    { href: "#platform",  label: isRTL ? "المنصة"    : "Plateforme" },
+    { href: "#download",  label: isRTL ? "التطبيق"   : "Application" },
+  ];
 
   const steps = [
     { icon: Package, title: tr("step1_title"), desc: tr("step1_desc"), color: "service-icon-orange" },
@@ -42,86 +65,207 @@ export default function Home() {
     <div className="min-h-screen bg-white overflow-x-hidden">
 
       {/* ── Navbar ── */}
-      <nav className="border-b border-gray-100/80 px-4 md:px-6 py-3.5 sticky top-0 bg-white/90 backdrop-blur-xl z-50"
-        style={{ boxShadow: "0 1px 3px rgba(15,23,42,0.03)" }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/" className="hover:opacity-90 transition-opacity">
-            <NaqlGoLogo size="sm" />
-          </Link>
+      <nav
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white/85 backdrop-blur-2xl border-b border-gray-200/60 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]"
+            : "bg-white/60 backdrop-blur-xl border-b border-transparent"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className={`flex items-center justify-between transition-all duration-300 ${scrolled ? "h-14" : "h-16 md:h-[68px]"}`}>
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 group shrink-0">
+              <div className="transition-transform group-hover:scale-[1.03]">
+                <NaqlGoLogo size="sm" />
+              </div>
+            </Link>
 
-          {/* Desktop nav links */}
-          <div className="hidden lg:flex items-center gap-7">
-            <a href="#how" className="text-sm font-medium text-gray-600 hover:text-[#FF6B00] transition-colors">
-              {isRTL ? "كيف يعمل" : "Comment ça marche"}
-            </a>
-            <a href="#services" className="text-sm font-medium text-gray-600 hover:text-[#FF6B00] transition-colors">
-              {isRTL ? "الخدمات" : "Services"}
-            </a>
-            <a href="#platform" className="text-sm font-medium text-gray-600 hover:text-[#FF6B00] transition-colors">
-              {isRTL ? "المنصة" : "Plateforme"}
-            </a>
-            <a href="#download" className="text-sm font-medium text-gray-600 hover:text-[#FF6B00] transition-colors">
-              {isRTL ? "التطبيق" : "Application"}
-            </a>
-          </div>
+            {/* Desktop nav links — pill style */}
+            <div className="hidden lg:flex items-center gap-1 bg-gray-50/80 border border-gray-100 rounded-full px-1.5 py-1">
+              {navLinks.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  className="text-sm font-medium text-gray-600 hover:text-[#0F172A] hover:bg-white hover:shadow-sm px-4 py-2 rounded-full transition-all"
+                >
+                  {l.label}
+                </a>
+              ))}
+            </div>
 
-          {/* Desktop CTAs */}
-          <div className="hidden md:flex items-center gap-3">
-            <button onClick={() => setLang(lang === "ar" ? "fr" : "ar")}
-              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-[#FF6B00] hover:text-[#FF6B00] transition-all">
-              <Globe className="w-3.5 h-3.5" />
-              {lang === "ar" ? "FR" : "AR"}
+            {/* Desktop right actions */}
+            <div className="hidden md:flex items-center gap-2">
+              {/* Language pill */}
+              <button
+                onClick={() => setLang(lang === "ar" ? "fr" : "ar")}
+                className="group relative flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:border-[#FF6B00]/40 hover:text-[#FF6B00] hover:bg-orange-50/50 transition-all"
+                aria-label={lang === "ar" ? "Switch to French" : "التبديل إلى العربية"}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span className="tracking-wider">{lang === "ar" ? "FR" : "عر"}</span>
+              </button>
+
+              {/* Login */}
+              <Link
+                href="/login"
+                className="text-gray-700 hover:text-[#0F172A] font-semibold text-sm px-4 py-2 rounded-xl hover:bg-gray-100/70 transition-all"
+              >
+                {tr("btn_login")}
+              </Link>
+
+              {/* Register dropdown */}
+              <div className="relative" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => setRegisterOpen((v) => !v)}
+                  className="btn-primary text-white font-semibold text-sm pl-4 pr-3 py-2 rounded-xl inline-flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {tr("btn_start")}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${registerOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {registerOpen && (
+                  <div
+                    className="absolute top-full end-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 animate-slide-up overflow-hidden"
+                    style={{ boxShadow: "0 20px 50px -12px rgba(15,23,42,0.18), 0 0 0 1px rgba(15,23,42,0.04)" }}
+                  >
+                    <Link
+                      href="/register?role=CLIENT"
+                      onClick={() => setRegisterOpen(false)}
+                      className="flex items-start gap-3 p-3 rounded-xl hover:bg-orange-50 transition-colors group/item"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FFF7ED] to-[#FFEDD5] flex items-center justify-center shrink-0 group-hover/item:scale-110 transition-transform">
+                        <Package className="w-4 h-4 text-[#FF6B00]" />
+                      </div>
+                      <div className="text-start min-w-0">
+                        <div className="font-bold text-sm text-[#0F172A]">{tr("btn_client")}</div>
+                        <div className="text-xs text-gray-500 mt-0.5 leading-tight">
+                          {isRTL ? "اطلب نقل شحنتك" : "Commander un transport"}
+                        </div>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/register?role=TRANSPORTER"
+                      onClick={() => setRegisterOpen(false)}
+                      className="flex items-start gap-3 p-3 rounded-xl hover:bg-blue-50 transition-colors group/item"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#EFF6FF] to-[#DBEAFE] flex items-center justify-center shrink-0 group-hover/item:scale-110 transition-transform">
+                        <Truck className="w-4 h-4 text-[#2563EB]" />
+                      </div>
+                      <div className="text-start min-w-0">
+                        <div className="font-bold text-sm text-[#0F172A]">{tr("btn_transporter")}</div>
+                        <div className="text-xs text-gray-500 mt-0.5 leading-tight">
+                          {isRTL ? "اربح المزيد كناقل" : "Gagnez plus en livrant"}
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2.5 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
             </button>
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium text-sm px-4 py-2 rounded-xl hover:bg-gray-50 transition-all">
-              {tr("btn_login")}
-            </Link>
-            <Link href="/register"
-              className="btn-primary text-white font-medium text-sm px-5 py-2 rounded-xl inline-flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              {tr("btn_start")}
-            </Link>
           </div>
-
-          {/* Mobile hamburger */}
-          <button onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors">
-            <Menu className="w-5 h-5" />
-          </button>
         </div>
       </nav>
 
       {/* ── Mobile menu overlay ── */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute top-0 end-0 w-72 h-full bg-white shadow-2xl flex flex-col p-6">
-            <div className="flex items-center justify-between mb-8">
+        <div className="fixed inset-0 z-[60] md:hidden">
+          <div
+            className="absolute inset-0 bg-[#0F172A]/50 backdrop-blur-sm animate-fade-in"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="absolute top-0 end-0 w-[85%] max-w-sm h-full bg-white shadow-2xl flex flex-col animate-slide-in-right">
+            {/* Mobile menu header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <NaqlGoLogo size="sm" />
-              <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
+                aria-label="Close menu"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-1 flex-1">
-              <Link href="/login" onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+
+            {/* Mobile nav links */}
+            <div className="flex-1 overflow-y-auto px-3 py-4">
+              <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold px-3 mb-2">
+                {isRTL ? "تصفّح" : "Navigation"}
+              </div>
+              <nav className="space-y-0.5 mb-6">
+                {navLinks.map((l) => (
+                  <a
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-3 py-3 rounded-xl text-gray-700 hover:bg-gray-50 font-medium text-sm transition-colors"
+                  >
+                    <span>{l.label}</span>
+                    <ChevronRight className={`w-4 h-4 text-gray-400 ${isRTL ? "rotate-180" : ""}`} />
+                  </a>
+                ))}
+              </nav>
+
+              <div className="text-[10px] uppercase tracking-widest text-gray-400 font-bold px-3 mb-2">
+                {isRTL ? "ابدأ الآن" : "Commencer"}
+              </div>
+              <div className="space-y-2">
+                <Link
+                  href="/register?role=CLIENT"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl bg-orange-50/50 hover:bg-orange-50 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FFF7ED] to-[#FFEDD5] flex items-center justify-center shrink-0">
+                    <Package className="w-4 h-4 text-[#FF6B00]" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm text-[#0F172A]">{tr("btn_client")}</div>
+                    <div className="text-[11px] text-gray-500">{isRTL ? "اطلب نقل" : "Commander"}</div>
+                  </div>
+                </Link>
+                <Link
+                  href="/register?role=TRANSPORTER"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl bg-blue-50/50 hover:bg-blue-50 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#EFF6FF] to-[#DBEAFE] flex items-center justify-center shrink-0">
+                    <Truck className="w-4 h-4 text-[#2563EB]" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm text-[#0F172A]">{tr("btn_transporter")}</div>
+                    <div className="text-[11px] text-gray-500">{isRTL ? "كن ناقلاً" : "Devenir transporteur"}</div>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* Mobile menu footer */}
+            <div className="border-t border-gray-100 p-4 space-y-2">
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full block text-center bg-gray-50 hover:bg-gray-100 text-[#0F172A] font-semibold text-sm py-3 rounded-xl transition-colors"
+              >
                 {tr("btn_login")}
               </Link>
-              <Link href="/register?role=CLIENT" onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[#FFF7ED] hover:text-[#FF6B00] font-medium transition-colors">
-                <Package className="w-4 h-4" />
-                {tr("btn_client")}
-              </Link>
-              <Link href="/register?role=TRANSPORTER" onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-[#EFF6FF] hover:text-[#2563EB] font-medium transition-colors">
-                <Truck className="w-4 h-4" />
-                {tr("btn_transporter")}
-              </Link>
+              <button
+                onClick={() => { setLang(lang === "ar" ? "fr" : "ar"); setMobileMenuOpen(false); }}
+                className="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-[#FF6B00] hover:bg-orange-50/50 font-medium text-sm py-2.5 rounded-xl transition-colors"
+              >
+                <Globe className="w-4 h-4" />
+                {lang === "ar" ? "Français" : "العربية"}
+              </button>
             </div>
-            <button onClick={() => { setLang(lang === "ar" ? "fr" : "ar"); setMobileMenuOpen(false); }}
-              className="flex items-center gap-2 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-medium text-sm transition-colors">
-              <Globe className="w-4 h-4" />
-              {lang === "ar" ? "Français" : "العربية"}
-            </button>
           </div>
         </div>
       )}
