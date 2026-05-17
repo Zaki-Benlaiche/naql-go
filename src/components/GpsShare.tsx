@@ -1,15 +1,16 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useLanguage } from "@/context/LanguageContext";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RotateCw, Settings } from "lucide-react";
 
 /**
  * Silent GPS tracker — no button, no banner.
  *
- * Mounts when the transporter's order is IN_TRANSIT, automatically requests
- * geolocation permission, and streams the position to /api/orders/:id/location
- * via watchPosition. The only UI it ever renders is an error toast if
- * permission is denied (because that's something the transporter must fix).
+ * Mounts during ACCEPTED / IN_TRANSIT, automatically requests geolocation
+ * permission, and streams the position to /api/orders/:id/location via
+ * watchPosition. The only UI it ever renders is an actionable error card
+ * when permission is denied — because that's something the user must fix
+ * before the rest of the flow works.
  *
  * Push policy:
  *  - Every movement >= 8 meters, OR
@@ -18,7 +19,9 @@ import { AlertTriangle } from "lucide-react";
  */
 export function GpsTracker({ requestId }: { requestId: string }) {
   const { lang } = useLanguage();
-  const [error, setError] = useState("");
+  const ar = lang === "ar";
+  const [error, setError]       = useState<"" | "denied" | "unavailable" | "nogps">("");
+  const [attempt, setAttempt]   = useState(0); // bumping this re-runs the effect
 
   const watchRef     = useRef<number | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -26,10 +29,8 @@ export function GpsTracker({ requestId }: { requestId: string }) {
   const lastPos      = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setError(lang === "ar" ? "GPS غير مدعوم في هذا الجهاز" : "GPS non supporté");
-      return;
-    }
+    if (!navigator.geolocation) { setError("nogps"); return; }
+    setError("");
 
     async function push(lat: number, lng: number, heading: number | null, speed: number | null) {
       lastPushAt.current = Date.now();
@@ -45,6 +46,7 @@ export function GpsTracker({ requestId }: { requestId: string }) {
 
     watchRef.current = navigator.geolocation.watchPosition(
       (p) => {
+        setError("");
         const dist = lastPos.current ? haversineMeters(lastPos.current, p.coords) : Infinity;
         const sinceLast = Date.now() - lastPushAt.current;
         if (!lastPos.current || dist >= 8 || sinceLast >= 6_000) {
@@ -52,15 +54,7 @@ export function GpsTracker({ requestId }: { requestId: string }) {
         }
       },
       (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          setError(lang === "ar"
-            ? "تم رفض الوصول للموقع — فعّل صلاحية GPS من إعدادات التطبيق"
-            : "Position refusée — activez la permission GPS dans les réglages");
-        } else {
-          setError(lang === "ar"
-            ? "تعذّر الوصول للموقع — تأكد من تفعيل GPS"
-            : "GPS indisponible — vérifiez qu'il est activé");
-        }
+        setError(err.code === err.PERMISSION_DENIED ? "denied" : "unavailable");
       },
       { enableHighAccuracy: true, maximumAge: 3_000, timeout: 20_000 },
     );
@@ -83,15 +77,70 @@ export function GpsTracker({ requestId }: { requestId: string }) {
       lastPos.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestId]);
+  }, [requestId, attempt]);
 
-  // Permission errors are the one thing the transporter *must* see — they
-  // can't fix what they don't know about. Everything else stays silent.
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+
+  const openSettings = useCallback(() => {
+    // On Capacitor APK, deep-link to the app's permissions page so the user
+    // doesn't have to hunt through Settings → Apps. The intent URL is
+    // recognized by the Android WebView. On browser, fall through to the
+    // text instructions in the message body.
+    try {
+      const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } };
+      if (w.Capacitor?.isNativePlatform?.()) {
+        window.location.href =
+          "intent://com.naqlgo.app#Intent;scheme=package;" +
+          "action=android.settings.APPLICATION_DETAILS_SETTINGS;end";
+      }
+    } catch { /* old WebView — user opens settings manually */ }
+  }, []);
+
   if (!error) return null;
+
+  const titles: Record<typeof error, { title: string; hint: string }> = {
+    denied: {
+      title: ar ? "صلاحية الموقع مرفوضة" : "Position refusée",
+      hint:  ar
+        ? "افتح إعدادات التطبيق ← الأذونات ← الموقع ← السماح، ثم اضغط إعادة المحاولة."
+        : "Ouvrez Réglages → Autorisations → Position → Autoriser, puis Réessayer.",
+    },
+    unavailable: {
+      title: ar ? "تعذّر قراءة الموقع" : "Position introuvable",
+      hint:  ar ? "تأكد من تشغيل GPS وإشارة جيدة، ثم أعد المحاولة." : "Vérifiez que le GPS est activé, puis réessayez.",
+    },
+    nogps: {
+      title: ar ? "GPS غير مدعوم" : "GPS non supporté",
+      hint:  ar ? "هذا الجهاز لا يدعم تحديد الموقع." : "Cet appareil ne prend pas en charge la géolocalisation.",
+    },
+  };
+  const t = titles[error];
+
   return (
-    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-amber-800">
-      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-      <p className="text-xs leading-tight">{error}</p>
+    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3">
+      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-amber-900 leading-tight">{t.title}</p>
+        <p className="text-xs text-amber-800/90 mt-1 leading-snug">{t.hint}</p>
+        <div className="flex flex-wrap gap-2 mt-2.5">
+          {error === "denied" && (
+            <button
+              onClick={openSettings}
+              className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              {ar ? "افتح الإعدادات" : "Ouvrir les réglages"}
+            </button>
+          )}
+          <button
+            onClick={retry}
+            className="inline-flex items-center gap-1.5 bg-white border border-amber-300 hover:bg-amber-50 text-amber-800 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <RotateCw className="w-3.5 h-3.5" />
+            {ar ? "إعادة المحاولة" : "Réessayer"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
