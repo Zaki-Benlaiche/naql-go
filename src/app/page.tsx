@@ -103,7 +103,7 @@ export default function Home() {
                 aria-label={lang === "ar" ? "Switch to French" : "التبديل إلى العربية"}
               >
                 <Globe className="w-3.5 h-3.5" />
-                <span className="tracking-wider">{lang === "ar" ? "FR" : "عر"}</span>
+                <span className="tracking-wider">{lang === "ar" ? "FR" : "AR"}</span>
               </button>
 
               {/* Login */}
