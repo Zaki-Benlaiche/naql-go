@@ -5,8 +5,8 @@ import Image from "next/image";
 import {
   Package, Clock, Star, ArrowLeft, ArrowRight, CheckCircle, Menu, X, Globe,
   Truck, Sofa, HardHat, Thermometer, Container, Shield, MapPin, Zap,
-  Phone, Mail, Sparkles, Download, Smartphone, Apple, Quote,
-  TrendingUp, Award, ChevronRight,
+  Phone, Mail, Sparkles, Download, Smartphone, Apple,
+  TrendingUp, ChevronRight,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
@@ -31,33 +31,12 @@ export default function Home() {
     { icon: Container,   name: tr("srv5_name"), sub: tr("srv5_sub"), color: "service-icon-navy" },
   ];
 
-  const stats = [
-    { value: "500+", label: tr("stat1_label"), icon: Truck },
-    { value: "48",   label: tr("stat2_label"), icon: MapPin },
-    { value: "2000+",label: tr("stat3_label"), icon: Package },
-    { value: "4.8★", label: tr("stat4_label"), icon: Star },
-  ];
-
   const features = [
     { title: tr("feat1_title"), desc: tr("feat1_desc"), icon: Shield },
     { title: tr("feat2_title"), desc: tr("feat2_desc"), icon: Zap },
     { title: tr("feat3_title"), desc: tr("feat3_desc"), icon: MapPin },
     { title: tr("feat4_title"), desc: tr("feat4_desc"), icon: Clock },
   ];
-
-  const testimonials = isRTL
-    ? [
-        { name: "أحمد بن علي", role: "صاحب متجر — الجزائر", text: "خدمة سريعة وموثوقة، وفّرت عليّ الوقت والمال. النقّالين متعاونين والأسعار منافسة.", rating: 5 },
-        { name: "ليلى مرابط",  role: "تاجرة بالجملة — وهران", text: "منصّة احترافية، استلمت عروض في دقائق واخترت الأنسب. التتبع المباشر مذهل!", rating: 5 },
-        { name: "كريم بوزيد",  role: "ناقل — قسنطينة",      text: "كناقل، NaqlGo يوفر لي طلبات يومية وعملاء جديين. المنصة سهلة وعادلة.", rating: 5 },
-      ]
-    : [
-        { name: "Ahmed Benali",   role: "Commerçant — Alger",       text: "Service rapide et fiable. Les transporteurs sont coopératifs et les prix imbattables.", rating: 5 },
-        { name: "Leila Marabet",  role: "Grossiste — Oran",         text: "Plateforme professionnelle, j'ai reçu des offres en quelques minutes. Le suivi en direct est génial !", rating: 5 },
-        { name: "Karim Bouzid",   role: "Transporteur — Constantine", text: "En tant que transporteur, NaqlGo me fournit des commandes quotidiennes et des clients sérieux.", rating: 5 },
-      ];
-
-  const partners = ["DHL", "Aramex", "Yalidine", "ZR Express", "Maystro"];
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -217,46 +196,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Avatars + rating */}
-          <div className="mt-8 flex items-center justify-center gap-4 animate-slide-up delay-500">
-            <div className="flex">
-              {["#FF6B00","#2563EB","#10B981","#F59E0B"].map((c, i) => (
-                <div key={i} className={`w-9 h-9 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm ${i > 0 ? "-ms-2" : ""}`}
-                  style={{ background: `linear-gradient(135deg, ${c}, ${c}cc)` }}>
-                  {["A","M","L","K"][i]}
-                </div>
-              ))}
-            </div>
-            <div className="text-start">
-              <div className="flex items-center gap-0.5 text-amber-400">
-                {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
-                <span className="text-xs font-bold text-[#0F172A] ms-1">4.8</span>
-              </div>
-              <div className="text-[11px] text-[#64748B]">
-                {isRTL ? "أكثر من 2000 عميل سعيد" : "Plus de 2000 clients satisfaits"}
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Wave divider */}
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-b from-transparent to-white pointer-events-none" />
-      </section>
-
-      {/* ── Partners strip ── */}
-      <section className="py-8 md:py-10 bg-white border-y border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 md:px-6">
-          <p className="text-center text-xs md:text-sm text-[#94A3B8] font-medium mb-5 uppercase tracking-widest">
-            {isRTL ? "موثوق به من قبل" : "Ils nous font confiance"}
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 opacity-60">
-            {partners.map((p, i) => (
-              <div key={i} className="text-base md:text-xl font-bold text-[#64748B] hover:text-[#0F172A] transition-colors">
-                {p}
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* ════════════════════════════════════════════════════
@@ -346,16 +289,6 @@ export default function Home() {
                 />
               </div>
 
-              {/* Floating tag */}
-              <div className="absolute -bottom-4 start-4 md:start-8 bg-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 border border-gray-100">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <div className="text-start">
-                  <div className="text-xs text-[#64748B]">{isRTL ? "وقت الاستجابة" : "Temps de réponse"}</div>
-                  <div className="text-sm font-bold text-[#0F172A]">{isRTL ? "أقل من 5 دقائق" : "Moins de 5 min"}</div>
-                </div>
-              </div>
             </div>
 
             {/* Text side */}
@@ -406,23 +339,6 @@ export default function Home() {
       </section>
 
       {/* ════════════════════════════════════════════════════
-          STATS
-          ════════════════════════════════════════════════════ */}
-      <section className="stats-gradient py-14 md:py-20">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 text-center text-white relative z-10">
-          {stats.map((s, i) => (
-            <div key={i} className="group">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                <s.icon className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-3xl md:text-4xl font-black mb-1">{s.value}</div>
-              <div className="text-orange-100 text-xs md:text-sm font-medium">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════════════════
           WHY NAQLGO
           ════════════════════════════════════════════════════ */}
       <section className="py-16 md:py-24 bg-white">
@@ -445,49 +361,6 @@ export default function Home() {
                 <div>
                   <div className="font-bold text-[#0F172A] mb-1 text-sm md:text-base">{f.title}</div>
                   <div className="text-[#64748B] text-xs md:text-sm leading-relaxed">{f.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════════════════
-          TESTIMONIALS
-          ════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24" style={{ background: "var(--bg-page)" }}>
-        <div className="max-w-6xl mx-auto px-4 md:px-6">
-          <div className="text-center mb-12 md:mb-16">
-            <span className="badge badge-yellow mb-4 inline-flex">
-              <Star className="w-3 h-3 fill-current" />
-              {isRTL ? "آراء عملائنا" : "Témoignages"}
-            </span>
-            <h2 className="text-2xl md:text-4xl font-bold text-[#0F172A] mb-3">
-              {isRTL ? "ماذا يقول عملاؤنا؟" : "Ce qu'ils disent de nous"}
-            </h2>
-            <p className="text-[#64748B] text-sm md:text-base max-w-lg mx-auto">
-              {isRTL ? "آلاف العملاء يثقون بـ NaqlGo يومياً" : "Des milliers de clients nous font confiance chaque jour"}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
-            {testimonials.map((t, i) => (
-              <div key={i} className="card-premium p-6 md:p-7 relative bg-white">
-                <Quote className="absolute top-5 end-5 w-8 h-8 text-orange-100" />
-                <div className="flex items-center gap-0.5 text-amber-400 mb-4">
-                  {[...Array(t.rating)].map((_, k) => <Star key={k} className="w-4 h-4 fill-current" />)}
-                </div>
-                <p className="text-[#475569] text-sm md:text-base leading-relaxed mb-6">
-                  &ldquo;{t.text}&rdquo;
-                </p>
-                <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FF6B00] to-[#E65100] flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0">
-                    {t.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="font-bold text-[#0F172A] text-sm">{t.name}</div>
-                    <div className="text-xs text-[#94A3B8]">{t.role}</div>
-                  </div>
                 </div>
               </div>
             ))}
@@ -554,26 +427,8 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Stats row */}
-              <div className="flex items-center justify-center lg:justify-start gap-6 pt-4 border-t border-white/10">
-                <div className="text-start">
-                  <div className="text-2xl font-black text-white">10K+</div>
-                  <div className="text-xs text-slate-400">{isRTL ? "تنزيل" : "Téléchargements"}</div>
-                </div>
-                <div className="w-px h-10 bg-white/15" />
-                <div className="text-start">
-                  <div className="flex items-center gap-1 text-2xl font-black text-white">4.8 <Star className="w-5 h-5 text-amber-400 fill-current" /></div>
-                  <div className="text-xs text-slate-400">{isRTL ? "تقييم" : "Note"}</div>
-                </div>
-                <div className="w-px h-10 bg-white/15 hidden sm:block" />
-                <div className="text-start hidden sm:block">
-                  <div className="text-2xl font-black text-white">86 Mo</div>
-                  <div className="text-xs text-slate-400">{isRTL ? "حجم خفيف" : "Taille légère"}</div>
-                </div>
-              </div>
-
               {/* Install hint */}
-              <div className="mt-7 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3 text-start">
+              <div className="mt-2 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3 text-start">
                 <Shield className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                 <div className="text-xs md:text-sm text-amber-100/90 leading-relaxed">
                   <span className="font-bold">{isRTL ? "تنبيه: " : "Note : "}</span>
@@ -597,11 +452,6 @@ export default function Home() {
                 />
               </div>
 
-              {/* Floating chip */}
-              <div className="absolute -top-3 -end-3 md:-top-5 md:-end-5 bg-gradient-to-br from-[#FF6B00] to-[#E65100] text-white rounded-2xl shadow-2xl px-4 py-2.5 flex items-center gap-2 animate-float">
-                <Award className="w-4 h-4" />
-                <span className="text-xs md:text-sm font-bold">{isRTL ? "الأفضل في 2025" : "Top App 2025"}</span>
-              </div>
             </div>
           </div>
         </div>
@@ -653,15 +503,11 @@ export default function Home() {
               <div className="mb-4">
                 <NaqlGoLogo size="sm" dark />
               </div>
-              <p className="text-slate-400 text-sm leading-relaxed mb-4">
+              <p className="text-slate-400 text-sm leading-relaxed">
                 {isRTL
                   ? "منصة النقل والشحن الرائدة في الجزائر."
                   : "La plateforme leader de transport en Algérie."}
               </p>
-              <div className="flex items-center gap-1 text-amber-400">
-                {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
-                <span className="text-xs text-slate-400 ms-2">4.8/5</span>
-              </div>
             </div>
 
             {/* Platform */}
