@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { publish, room, events } from "@/lib/realtime";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
 
-    const { lat, lng } = await req.json();
+    const { lat, lng, heading, speed } = await req.json();
     if (typeof lat !== "number" || typeof lng !== "number") {
       return NextResponse.json({ error: "إحداثيات غير صالحة" }, { status: 400 });
     }
@@ -60,10 +61,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
 
-    await prisma.locationTrack.upsert({
+    const updated = await prisma.locationTrack.upsert({
       where:  { requestId: id },
       create: { requestId: id, lat, lng },
       update: { lat, lng },
+    });
+
+    // Fan out to anyone watching this request on the socket (client + admins).
+    // Heading & speed are passed through but not persisted — only the latest
+    // (lat, lng) lives in the DB; in-flight metadata stays on the wire.
+    publish(room.req(id), events.locationUpdate, {
+      lat,
+      lng,
+      heading: typeof heading === "number" && isFinite(heading) ? heading : null,
+      speed:   typeof speed   === "number" && isFinite(speed)   ? speed   : null,
+      updatedAt: updated.updatedAt.toISOString(),
     });
 
     return NextResponse.json({ success: true });
