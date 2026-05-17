@@ -62,4 +62,5 @@ export const events = {
   bidAccepted:      "bid:accepted",
   chatMessage:      "chat:message",
   locationUpdate:   "location:update",
+  locationClient:   "location:client",
 } as const;

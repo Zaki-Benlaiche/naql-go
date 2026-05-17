@@ -6,6 +6,7 @@ import { useSmartPoll } from "@/hooks/useSmartPoll";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Package, ChevronDown, ChevronUp, Phone, CheckCircle, AlertCircle, Star, XCircle, Trash2, ArrowLeft } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
+import { GpsTracker } from "@/components/GpsShare";
 import { useLanguage } from "@/context/LanguageContext";
 
 // Dynamically import LiveMap (Leaflet requires browser APIs — no SSR)
@@ -306,12 +307,18 @@ export default function RequestsPage() {
                       </div>
                     )}
 
-                    {/* Live map — only when transporter is in transit */}
-                    {req.status === "IN_TRANSIT" && (
-                      <div className="mb-5">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    {/* Live map — visible from ACCEPTED onward.
+                        During ACCEPTED the client also broadcasts their own
+                        GPS so the transporter can find them for pickup.
+                        GpsTracker is invisible; the map is the indicator. */}
+                    {(req.status === "ACCEPTED" || req.status === "IN_TRANSIT") && (
+                      <div className="mb-5 space-y-2">
+                        {req.status === "ACCEPTED" && <GpsTracker requestId={req.id} />}
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
                           <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
-                          {lang === "ar" ? "تتبع الناقل على الخريطة" : "Suivre le transporteur sur la carte"}
+                          {req.status === "ACCEPTED"
+                            ? (lang === "ar" ? "الناقل في طريقه إليك" : "Le transporteur arrive")
+                            : (lang === "ar" ? "تتبع الناقل على الخريطة" : "Suivre le transporteur sur la carte")}
                         </p>
                         <LiveMap
                           requestId={req.id}

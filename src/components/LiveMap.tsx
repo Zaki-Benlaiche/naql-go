@@ -53,6 +53,38 @@ const makePickupIcon = () =>
     iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -22],
   });
 
+// Live client marker — purple "person" pin that pulses to distinguish it
+// from the static pickup point A.
+const makeClientIcon = () =>
+  L.divIcon({
+    className: "",
+    html: `<div style="
+      background:linear-gradient(135deg,#A855F7,#7E22CE);
+      width:40px;height:40px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      border:3px solid white;
+      box-shadow:0 4px 14px rgba(168,85,247,0.55);
+      position:relative;
+    ">
+      <span style="position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(168,85,247,0.55);animation:pulseRing 1.6s ease-out infinite;"></span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+        viewBox="0 0 24 24" fill="none" stroke="white"
+        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="7" r="4"/>
+        <path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>
+      </svg>
+    </div>
+    <style>
+      @keyframes pulseRing {
+        0%   { transform: scale(1);   opacity: 0.8; }
+        100% { transform: scale(1.6); opacity: 0;   }
+      }
+    </style>`,
+    iconSize:    [40, 40],
+    iconAnchor:  [20, 20],
+    popupAnchor: [0, -24],
+  });
+
 const makeDeliveryIcon = () =>
   L.divIcon({
     className: "",
@@ -129,6 +161,12 @@ type LocationPayload = {
   updatedAt: string;
 };
 
+type ClientLocationPayload = {
+  lat: number;
+  lng: number;
+  updatedAt: string;
+};
+
 type Props = {
   requestId: string;
   fromLat?: number | null;
@@ -157,6 +195,9 @@ export default function LiveMap({ requestId, fromLat, fromLng, toLat, toLng }: P
   const [fullscreen, setFullscreen] = useState(false);
   const [fitTrigger, setFitTrigger] = useState(0);
   const [arrivalState, setArrivalState] = useState<"" | "approaching" | "arrived">("");
+  // Live client position. Broadcast-only — vanishes from the map if no fresh
+  // tick arrives in 90 s (client closed their page or lost connectivity).
+  const [clientPos, setClientPos] = useState<ClientLocationPayload | null>(null);
   // Real road route from OSRM: actual driving path, distance and duration.
   // If OSRM is unreachable we silently fall back to the straight-line view.
   const [route, setRoute] = useState<{
@@ -172,6 +213,23 @@ export default function LiveMap({ requestId, fromLat, fromLng, toLat, toLng }: P
     if (!data || typeof data.lat !== "number" || typeof data.lng !== "number") return;
     applyPos(data);
   });
+  // Live client GPS (broadcast-only — never hits the DB).
+  useRealtimeEvent<ClientLocationPayload>("location:client", (data) => {
+    if (!data || typeof data.lat !== "number" || typeof data.lng !== "number") return;
+    setClientPos(data);
+  });
+
+  // Drop the client marker if no fresh tick has arrived in 90 s — they
+  // probably closed the page or lost connectivity. Cleaner than showing a
+  // stale position that misleads the transporter.
+  useEffect(() => {
+    if (!clientPos) return;
+    const id = setInterval(() => {
+      const age = Date.now() - new Date(clientPos.updatedAt).getTime();
+      if (age > 90_000) setClientPos(null);
+    }, 10_000);
+    return () => clearInterval(id);
+  }, [clientPos]);
 
   /* ── Initial fetch + slow safety poll (30s) in case socket drops ── */
   useEffect(() => {
@@ -421,6 +479,12 @@ export default function LiveMap({ requestId, fromLat, fromLng, toLat, toLng }: P
           <span className="w-3 h-3 rounded-full bg-orange-500 shrink-0" />
           <span className="font-semibold text-gray-700">{isRTL ? "الناقل" : "Transporteur"}</span>
         </div>
+        {clientPos && (
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-purple-500 shrink-0" />
+            <span className="text-gray-600">{isRTL ? "العميل" : "Client"}</span>
+          </div>
+        )}
         {hasPickup && (
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-blue-500 shrink-0" />
@@ -521,6 +585,15 @@ export default function LiveMap({ requestId, fromLat, fromLng, toLat, toLng }: P
         {hasPickup && (
           <Marker position={[fromLat!, fromLng!]} icon={makePickupIcon()}>
             <Popup>{isRTL ? "📦 نقطة الانطلاق" : "📦 Point de départ"}</Popup>
+          </Marker>
+        )}
+
+        {/* Live client position (purple) — visible while the client is
+            actively sharing during the ACCEPTED phase. Stops appearing when
+            the broadcast goes silent for >90 s. */}
+        {clientPos && (
+          <Marker position={[clientPos.lat, clientPos.lng]} icon={makeClientIcon()}>
+            <Popup>{isRTL ? "👤 موقع العميل" : "👤 Position du client"}</Popup>
           </Marker>
         )}
 

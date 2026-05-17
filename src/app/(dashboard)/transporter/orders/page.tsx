@@ -361,16 +361,19 @@ function OrderCard({ order, lang, tr, statusLabel, updating, uploading, fileInpu
           </div>
         )}
 
-        {/* Live map + silent GPS tracker — visible the moment the trip starts.
-            GpsTracker auto-shares GPS in the background; the only UI it ever
-            renders is a permission-denied warning. The map is the indicator:
-            once the transporter starts moving, the truck shows up on the map. */}
-        {isInTransit && (
+        {/* Live map + silent GPS tracker — visible from the moment the bid is
+            accepted, so the transporter can find the client during pickup
+            (purple marker = client's live position, shared only during the
+            ACCEPTED phase). GpsTracker auto-shares the transporter's GPS in
+            the background; its only UI is a permission-denied warning. */}
+        {(isAccepted || isInTransit) && (
           <div className="mb-5 space-y-2">
             <GpsTracker requestId={order.id} />
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
               <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
-              {ar ? "خريطة المسار المباشر" : "Itinéraire en direct"}
+              {isAccepted
+                ? (ar ? "خريطة الوصول للعميل" : "Itinéraire vers le client")
+                : (ar ? "خريطة المسار المباشر" : "Itinéraire en direct")}
             </p>
             <LiveMap
               requestId={order.id}
