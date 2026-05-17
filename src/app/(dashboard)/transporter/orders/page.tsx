@@ -5,7 +5,7 @@ import { useSmartPoll } from "@/hooks/useSmartPoll";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Package, Phone, Truck, CheckCircle, MapPin, Camera, Zap } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
-import { GpsShareButton } from "@/components/GpsShare";
+import { GpsTracker } from "@/components/GpsShare";
 import { useLanguage } from "@/context/LanguageContext";
 import { TranslationKey } from "@/lib/translations";
 
@@ -354,20 +354,21 @@ function OrderCard({ order, lang, tr, statusLabel, updating, uploading, fileInpu
           </a>
         </div>
 
-        {/* Chat + GPS — for active (non-open, non-delivered) orders */}
+        {/* Chat — for active orders */}
         {!isOpen && !isDelivered && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+          <div className="mb-4">
             <ChatPanel requestId={order.id} myRole="TRANSPORTER" />
-            {isInTransit && <GpsShareButton requestId={order.id} />}
           </div>
         )}
 
-        {/* Live map — visible to the transporter once en route, mirroring the
-            client view. GpsShareButton above auto-starts on mount so the truck
-            shows up on the map within seconds of tapping "Start trip". */}
+        {/* Live map + silent GPS tracker — visible the moment the trip starts.
+            GpsTracker auto-shares GPS in the background; the only UI it ever
+            renders is a permission-denied warning. The map is the indicator:
+            once the transporter starts moving, the truck shows up on the map. */}
         {isInTransit && (
-          <div className="mb-5">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+          <div className="mb-5 space-y-2">
+            <GpsTracker requestId={order.id} />
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
               <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
               {ar ? "خريطة المسار المباشر" : "Itinéraire en direct"}
             </p>

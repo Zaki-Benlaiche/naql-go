@@ -157,6 +157,13 @@ export default function LiveMap({ requestId, fromLat, fromLng, toLat, toLng }: P
   const [fullscreen, setFullscreen] = useState(false);
   const [fitTrigger, setFitTrigger] = useState(0);
   const [arrivalState, setArrivalState] = useState<"" | "approaching" | "arrived">("");
+  // Real road route from OSRM: actual driving path, distance and duration.
+  // If OSRM is unreachable we silently fall back to the straight-line view.
+  const [route, setRoute] = useState<{
+    coords: [number, number][];
+    distanceKm: number;
+    durationMin: number;
+  } | null>(null);
   const lastBearing = useRef<number | null>(null);
 
   /* ── Realtime: join request room & listen for pushes ── */
@@ -231,6 +238,48 @@ export default function LiveMap({ requestId, fromLat, fromLng, toLat, toLng }: P
     else                              setArrivalState("");
   }, [pos, toLat, toLng]);
 
+  /* ── OSRM road routing: re-fetch when the truck has moved enough to matter ──
+     Free public OSRM server. If it's down or rate-limits, we just fall back to
+     the straight-line distance (the stats memo handles both cases). */
+  const lastRouteFrom = useRef<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (!pos || typeof toLat !== "number" || typeof toLng !== "number") {
+      setRoute(null);
+      return;
+    }
+    // Throttle: only re-route if we moved >= 50m from the last route origin.
+    if (lastRouteFrom.current) {
+      const moved = haversineKm(lastRouteFrom.current, pos) * 1000;
+      if (moved < 50) return;
+    }
+    lastRouteFrom.current = { lat: pos.lat, lng: pos.lng };
+
+    const ctrl = new AbortController();
+    const url =
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${pos.lng},${pos.lat};${toLng},${toLat}` +
+      `?overview=full&geometries=geojson&alternatives=false&steps=false`;
+
+    fetch(url, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const r = j?.routes?.[0];
+        if (!r?.geometry?.coordinates) return;
+        // OSRM returns [lng, lat] pairs — Leaflet wants [lat, lng].
+        const coords: [number, number][] = r.geometry.coordinates.map(
+          (c: [number, number]) => [c[1], c[0]],
+        );
+        setRoute({
+          coords,
+          distanceKm:  r.distance / 1000,
+          durationMin: r.duration / 60,
+        });
+      })
+      .catch(() => { /* offline / rate-limited — keep last route or straight line */ });
+
+    return () => ctrl.abort();
+  }, [pos, toLat, toLng]);
+
   /* ── Lock body scroll while fullscreen ── */
   useEffect(() => {
     if (!fullscreen) return;
@@ -256,16 +305,24 @@ export default function LiveMap({ requestId, fromLat, fromLng, toLat, toLng }: P
     ];
   }, [pos, hasPickup, hasDelivery, fromLat, fromLng, toLat, toLng]);
 
-  // Distance/ETA to delivery point
+  // Distance/ETA to delivery point.
+  //  - Prefer OSRM road distance & duration when available (accurate).
+  //  - Fall back to straight-line Haversine + 40 km/h city average otherwise.
   const stats = useMemo(() => {
     if (!pos || !hasDelivery) return null;
+    const speedMs  = typeof pos.speed === "number" && pos.speed > 1 ? pos.speed : null;
+    const speedKmh = speedMs ? speedMs * 3.6 : null;
+    if (route) {
+      return {
+        distanceKm: route.distanceKm,
+        etaMin:     Math.max(1, Math.round(route.durationMin)),
+        speedKmh,
+      };
+    }
     const distanceKm = haversineKm(pos, { lat: toLat!, lng: toLng! });
-    // Speed: prefer GPS, else assume 40 km/h in city traffic
-    const speedMs   = typeof pos.speed === "number" && pos.speed > 1 ? pos.speed : null;
-    const speedKmh  = speedMs ? speedMs * 3.6 : 40;
-    const etaMin    = Math.max(1, Math.round((distanceKm / speedKmh) * 60));
-    return { distanceKm, etaMin, speedKmh: speedMs ? speedKmh : null };
-  }, [pos, hasDelivery, toLat, toLng]);
+    const etaMin     = Math.max(1, Math.round((distanceKm / (speedKmh ?? 40)) * 60));
+    return { distanceKm, etaMin, speedKmh };
+  }, [pos, hasDelivery, toLat, toLng, route]);
 
   /* ── Empty/loading states ── */
   if (!pos) {
@@ -425,14 +482,28 @@ export default function LiveMap({ requestId, fromLat, fromLng, toLat, toLng }: P
           />
         )}
 
-        {/* Straight-line route from current pos → delivery */}
-        {hasDelivery && (
+        {/* Route to delivery — OSRM road path when available, else straight line.
+            The road path is a solid thicker line; the straight-line fallback
+            uses a dashed style so it's visually distinct from a confirmed route. */}
+        {hasDelivery && route && route.coords.length >= 2 && (
+          <Polyline
+            positions={route.coords}
+            pathOptions={{
+              color: "#10B981",
+              weight: 5,
+              opacity: 0.85,
+              lineCap: "round",
+              lineJoin: "round",
+            }}
+          />
+        )}
+        {hasDelivery && !route && (
           <Polyline
             positions={[[pos.lat, pos.lng], [toLat!, toLng!]]}
             pathOptions={{
               color: "#10B981",
               weight: 3,
-              opacity: 0.8,
+              opacity: 0.6,
               dashArray: "8,6",
               lineCap: "round",
             }}

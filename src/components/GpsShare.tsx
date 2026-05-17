@@ -1,78 +1,52 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { Navigation, Satellite } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { AlertTriangle } from "lucide-react";
 
-// Transporter: share their live GPS via watchPosition (continuous, battery-friendly).
-// Auto-starts on mount so the client can see the truck the instant the
-// transporter taps "Start trip". The transporter can still pause sharing
-// with the Stop button.
-//
-// We push:
-//  - every movement > 8 meters
-//  - OR every 25 s as a heartbeat (so the "fresh" badge on the client stays green)
-export function GpsShareButton({
-  requestId,
-  autoStart = true,
-}: {
-  requestId: string;
-  autoStart?: boolean;
-}) {
-  const { lang, tr } = useLanguage();
-  const [sharing, setSharing] = useState(false);
-  const [accuracy, setAccuracy] = useState<number | null>(null);
+/**
+ * Silent GPS tracker — no button, no banner.
+ *
+ * Mounts when the transporter's order is IN_TRANSIT, automatically requests
+ * geolocation permission, and streams the position to /api/orders/:id/location
+ * via watchPosition. The only UI it ever renders is an error toast if
+ * permission is denied (because that's something the transporter must fix).
+ *
+ * Push policy:
+ *  - Every movement >= 8 meters, OR
+ *  - Every 25 seconds heartbeat (keeps the client's "fresh" badge green
+ *    while the truck is parked at a light)
+ */
+export function GpsTracker({ requestId }: { requestId: string }) {
+  const { lang } = useLanguage();
   const [error, setError] = useState("");
 
-  const watchRef      = useRef<number | null>(null);
-  const heartbeatRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastPushAt    = useRef(0);
-  const lastPos       = useRef<{ lat: number; lng: number } | null>(null);
-  const startedRef    = useRef(false); // guards double-start in StrictMode
+  const watchRef     = useRef<number | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastPushAt   = useRef(0);
+  const lastPos      = useRef<{ lat: number; lng: number } | null>(null);
 
-  async function push(lat: number, lng: number, heading: number | null, speed: number | null) {
-    lastPushAt.current = Date.now();
-    lastPos.current    = { lat, lng };
-    try {
-      await fetch(`/api/orders/${requestId}/location`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ lat, lng, heading, speed }),
-      });
-    } catch { /* network blip — next tick will retry */ }
-  }
-
-  function stopSharing() {
-    setSharing(false);
-    setAccuracy(null);
-    startedRef.current = false;
-    if (watchRef.current !== null) {
-      navigator.geolocation.clearWatch(watchRef.current);
-      watchRef.current = null;
-    }
-    if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = null; }
-    lastPos.current = null;
-  }
-
-  function startSharing() {
-    if (startedRef.current) return;
+  useEffect(() => {
     if (!navigator.geolocation) {
       setError(lang === "ar" ? "GPS غير مدعوم في هذا الجهاز" : "GPS non supporté");
       return;
     }
-    startedRef.current = true;
-    setError("");
-    // Reflect "sharing" immediately — the dot turns green before the first
-    // fix lands, so the transporter knows the tap was registered.
-    setSharing(true);
+
+    async function push(lat: number, lng: number, heading: number | null, speed: number | null) {
+      lastPushAt.current = Date.now();
+      lastPos.current    = { lat, lng };
+      try {
+        await fetch(`/api/orders/${requestId}/location`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ lat, lng, heading, speed }),
+        });
+      } catch { /* network blip — heartbeat will retry */ }
+    }
 
     watchRef.current = navigator.geolocation.watchPosition(
       (p) => {
-        setAccuracy(p.coords.accuracy);
-
         const dist = lastPos.current ? haversineMeters(lastPos.current, p.coords) : Infinity;
         const sinceLast = Date.now() - lastPushAt.current;
-
-        // Push if first fix, OR moved >= 8m, OR more than 6s since last push
         if (!lastPos.current || dist >= 8 || sinceLast >= 6_000) {
           push(p.coords.latitude, p.coords.longitude, p.coords.heading, p.coords.speed);
         }
@@ -80,87 +54,44 @@ export function GpsShareButton({
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
           setError(lang === "ar"
-            ? "تم رفض الوصول للموقع — فعّل الأذونات"
-            : "Accès à la position refusé — activez les permissions");
+            ? "تم رفض الوصول للموقع — فعّل صلاحية GPS من إعدادات التطبيق"
+            : "Position refusée — activez la permission GPS dans les réglages");
         } else {
           setError(lang === "ar"
             ? "تعذّر الوصول للموقع — تأكد من تفعيل GPS"
-            : "Impossible d'accéder à la position");
+            : "GPS indisponible — vérifiez qu'il est activé");
         }
-        stopSharing();
       },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 3_000,
-        timeout:    20_000,
-      },
+      { enableHighAccuracy: true, maximumAge: 3_000, timeout: 20_000 },
     );
 
-    // Heartbeat: push current position every 25s even if not moving, so the
-    // client's "fresh" indicator stays green while parked at a light.
     heartbeatRef.current = setInterval(() => {
       if (lastPos.current) {
         push(lastPos.current.lat, lastPos.current.lng, null, 0);
       }
     }, 25_000);
-  }
 
-  // Auto-start GPS sharing the moment the component mounts. The transporter
-  // doesn't have to tap a button — sharing kicks in as soon as the order
-  // enters IN_TRANSIT and this component appears on the page.
-  useEffect(() => {
-    if (autoStart) startSharing();
-    return () => stopSharing();
+    return () => {
+      if (watchRef.current !== null) {
+        navigator.geolocation.clearWatch(watchRef.current);
+        watchRef.current = null;
+      }
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current);
+        heartbeatRef.current = null;
+      }
+      lastPos.current = null;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [requestId]);
 
-  if (sharing) {
-    return (
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-2.5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl px-4 py-3">
-          <span className="relative flex h-2.5 w-2.5 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm text-green-800 font-bold leading-tight">
-              {lang === "ar" ? "موقعك يُبثّ مباشرة" : "Position diffusée en direct"}
-            </div>
-            {accuracy !== null && (
-              <div className="flex items-center gap-1 text-[10px] text-green-600 mt-0.5">
-                <Satellite className="w-3 h-3" />
-                <span>
-                  {lang === "ar" ? `دقة ±${Math.round(accuracy)}م` : `précision ±${Math.round(accuracy)} m`}
-                </span>
-              </div>
-            )}
-          </div>
-          <button
-            onClick={stopSharing}
-            className="text-xs text-red-500 hover:text-red-700 font-semibold transition-colors px-2.5 py-1 rounded-lg hover:bg-red-50"
-          >
-            {lang === "ar" ? "إيقاف" : "Arrêter"}
-          </button>
-        </div>
-        <p className="text-[10px] text-gray-400 text-center px-2">
-          {lang === "ar"
-            ? "العميل يرى موقعك لحظياً على الخريطة"
-            : "Le client voit votre position en temps réel"}
-        </p>
-      </div>
-    );
-  }
-
+  // Permission errors are the one thing the transporter *must* see — they
+  // can't fix what they don't know about. Everything else stays silent.
+  if (!error) return null;
   return (
-    <div>
-      <button
-        onClick={startSharing}
-        className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors w-full justify-center shadow-sm"
-      >
-        <Navigation className="w-4 h-4" />
-        {tr("share_location")}
-      </button>
-      {error && <p className="text-red-500 text-xs mt-1.5 text-center">{error}</p>}
+    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-amber-800">
+      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+      <p className="text-xs leading-tight">{error}</p>
     </div>
   );
 }
