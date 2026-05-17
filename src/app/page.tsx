@@ -41,18 +41,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
 
-      {/* ── Top announcement bar ── */}
-      <div className="bg-gradient-to-r from-[#FF6B00] via-[#E65100] to-[#FF6B00] text-white text-xs md:text-sm py-2 px-4 text-center relative overflow-hidden">
-        <div className="max-w-6xl mx-auto flex items-center justify-center gap-2 relative z-10">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          <span className="font-medium">
-            {isRTL
-              ? "🚀 منصة النقل الأولى في الجزائر — التسجيل مجاني الآن"
-              : "🚀 La 1ère plateforme de transport en Algérie — Inscription gratuite"}
-          </span>
-        </div>
-      </div>
-
       {/* ── Navbar ── */}
       <nav className="border-b border-gray-100/80 px-4 md:px-6 py-3.5 sticky top-0 bg-white/90 backdrop-blur-xl z-50"
         style={{ boxShadow: "0 1px 3px rgba(15,23,42,0.03)" }}>
