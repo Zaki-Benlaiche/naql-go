@@ -4,19 +4,30 @@ import { Navigation, Satellite } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 // Transporter: share their live GPS via watchPosition (continuous, battery-friendly).
+// Auto-starts on mount so the client can see the truck the instant the
+// transporter taps "Start trip". The transporter can still pause sharing
+// with the Stop button.
+//
 // We push:
 //  - every movement > 8 meters
 //  - OR every 25 s as a heartbeat (so the "fresh" badge on the client stays green)
-export function GpsShareButton({ requestId }: { requestId: string }) {
+export function GpsShareButton({
+  requestId,
+  autoStart = true,
+}: {
+  requestId: string;
+  autoStart?: boolean;
+}) {
   const { lang, tr } = useLanguage();
   const [sharing, setSharing] = useState(false);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [error, setError] = useState("");
 
-  const watchRef     = useRef<number | null>(null);
-  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastPushAt   = useRef(0);
-  const lastPos      = useRef<{ lat: number; lng: number } | null>(null);
+  const watchRef      = useRef<number | null>(null);
+  const heartbeatRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastPushAt    = useRef(0);
+  const lastPos       = useRef<{ lat: number; lng: number } | null>(null);
+  const startedRef    = useRef(false); // guards double-start in StrictMode
 
   async function push(lat: number, lng: number, heading: number | null, speed: number | null) {
     lastPushAt.current = Date.now();
@@ -33,6 +44,7 @@ export function GpsShareButton({ requestId }: { requestId: string }) {
   function stopSharing() {
     setSharing(false);
     setAccuracy(null);
+    startedRef.current = false;
     if (watchRef.current !== null) {
       navigator.geolocation.clearWatch(watchRef.current);
       watchRef.current = null;
@@ -42,15 +54,19 @@ export function GpsShareButton({ requestId }: { requestId: string }) {
   }
 
   function startSharing() {
+    if (startedRef.current) return;
     if (!navigator.geolocation) {
       setError(lang === "ar" ? "GPS غير مدعوم في هذا الجهاز" : "GPS non supporté");
       return;
     }
+    startedRef.current = true;
     setError("");
+    // Reflect "sharing" immediately — the dot turns green before the first
+    // fix lands, so the transporter knows the tap was registered.
+    setSharing(true);
 
     watchRef.current = navigator.geolocation.watchPosition(
       (p) => {
-        setSharing(true);
         setAccuracy(p.coords.accuracy);
 
         const dist = lastPos.current ? haversineMeters(lastPos.current, p.coords) : Infinity;
@@ -89,7 +105,14 @@ export function GpsShareButton({ requestId }: { requestId: string }) {
     }, 25_000);
   }
 
-  useEffect(() => () => stopSharing(), []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Auto-start GPS sharing the moment the component mounts. The transporter
+  // doesn't have to tap a button — sharing kicks in as soon as the order
+  // enters IN_TRANSIT and this component appears on the page.
+  useEffect(() => {
+    if (autoStart) startSharing();
+    return () => stopSharing();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (sharing) {
     return (

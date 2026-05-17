@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useSmartPoll } from "@/hooks/useSmartPoll";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Package, Phone, Truck, CheckCircle, MapPin, Camera, Zap } from "lucide-react";
@@ -8,10 +9,22 @@ import { GpsShareButton } from "@/components/GpsShare";
 import { useLanguage } from "@/context/LanguageContext";
 import { TranslationKey } from "@/lib/translations";
 
+// Leaflet pulls in window APIs — no SSR.
+const LiveMap = dynamic(() => import("@/components/LiveMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-44 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-center">
+      <span className="w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+    </div>
+  ),
+});
+
 type Order = {
   id: string;
   fromCity: string; toCity: string;
   fromAddress: string; toAddress: string;
+  fromLat?: number | null; fromLng?: number | null;
+  toLat?: number | null;   toLng?: number | null;
   goodsType: string; weight: number;
   status: string; updatedAt: string;
   proofOfDelivery: string | null;
@@ -346,6 +359,25 @@ function OrderCard({ order, lang, tr, statusLabel, updating, uploading, fileInpu
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
             <ChatPanel requestId={order.id} myRole="TRANSPORTER" />
             {isInTransit && <GpsShareButton requestId={order.id} />}
+          </div>
+        )}
+
+        {/* Live map — visible to the transporter once en route, mirroring the
+            client view. GpsShareButton above auto-starts on mount so the truck
+            shows up on the map within seconds of tapping "Start trip". */}
+        {isInTransit && (
+          <div className="mb-5">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+              {ar ? "خريطة المسار المباشر" : "Itinéraire en direct"}
+            </p>
+            <LiveMap
+              requestId={order.id}
+              fromLat={order.fromLat}
+              fromLng={order.fromLng}
+              toLat={order.toLat}
+              toLng={order.toLng}
+            />
           </div>
         )}
 
