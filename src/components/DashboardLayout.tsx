@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { NaqlGoLogo } from "@/components/NaqlGoLogo";
+import { playNotificationSound } from "@/lib/notificationSound";
 
 // Icon color mapping for each nav item
 const iconColors: Record<string, string> = {
@@ -96,6 +97,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           const count = d.count ?? 0;
           if (prevCountRef.current >= 0 && count > prevCountRef.current) {
             setNotifToast(lang === "ar" ? "لديك إشعار جديد 🔔" : "Nouvelle notification 🔔");
+            playNotificationSound();
             setTimeout(() => setNotifToast(null), 5000);
           }
           prevCountRef.current = count;

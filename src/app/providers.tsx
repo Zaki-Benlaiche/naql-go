@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { NativeBridge } from "@/components/NativeBridge";
 import { PushBridge } from "@/components/PushBridge";
+import { initNotificationSound } from "@/lib/notificationSound";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -54,6 +55,7 @@ function installFetchProxy() {
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     installFetchProxy();
+    initNotificationSound();
   }, []);
 
   // Tell next-auth where its endpoints live (relative on web, absolute in APK)

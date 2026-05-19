@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { playNotificationSound } from "@/lib/notificationSound";
 
 // Registers this device with FCM, ships the token to the backend, and routes
 // the user to the right page when a push is tapped.
@@ -71,14 +72,16 @@ export function PushBridge() {
       );
 
       // Step 3 — foreground notifications. Without a custom UI Android won't
-      // show a banner when the app is open. We log for debugging; the in-app
-      // notification list is already kept fresh by polling.
+      // show a banner when the app is open. We play the in-app chime + buzz
+      // so the user notices immediately; the notification list is already
+      // kept fresh by polling.
       const onReceived = await PushNotifications.addListener(
         "pushNotificationReceived",
         (n) => {
           if (process.env.NODE_ENV !== "production") {
             console.log("[push] received", n.title, n.data);
           }
+          playNotificationSound();
         },
       );
 
